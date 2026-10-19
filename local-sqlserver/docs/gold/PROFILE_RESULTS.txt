@@ -1,0 +1,95 @@
+Verified local Docker identity, unchanged image/volume, and read-only source mount.
+snapshot 2026-10-19 21:56:18.3873067 DataWarehouse
+crm_cust_info 1 cst_id int 4 1
+crm_cust_info 2 cst_key nvarchar 100 1
+crm_cust_info 3 cst_firstname nvarchar 100 1
+crm_cust_info 4 cst_lastname nvarchar 100 1
+crm_cust_info 5 cst_marital_status nvarchar 100 1
+crm_cust_info 6 cst_gndr nvarchar 100 1
+crm_cust_info 7 cst_create_date date 3 1
+crm_cust_info 8 dwh_create_date datetime2 8 1
+crm_prd_info 1 prd_id int 4 1
+crm_prd_info 2 cat_id nvarchar 100 1
+crm_prd_info 3 prd_key nvarchar 100 1
+crm_prd_info 4 prd_nm nvarchar 100 1
+crm_prd_info 5 prd_cost int 4 1
+crm_prd_info 6 prd_line nvarchar 100 1
+crm_prd_info 7 prd_start_dt date 3 1
+crm_prd_info 8 prd_end_dt date 3 1
+crm_prd_info 9 dwh_create_date datetime2 8 1
+crm_sales_details 1 sls_ord_num nvarchar 100 1
+crm_sales_details 2 sls_prd_key nvarchar 100 1
+crm_sales_details 3 sls_cust_id int 4 1
+crm_sales_details 4 sls_order_dt date 3 1
+crm_sales_details 5 sls_ship_dt date 3 1
+crm_sales_details 6 sls_due_dt date 3 1
+crm_sales_details 7 sls_sales int 4 1
+crm_sales_details 8 sls_quantity int 4 1
+crm_sales_details 9 sls_price int 4 1
+crm_sales_details 10 dwh_create_date datetime2 8 1
+erp_cust_az12 1 cid nvarchar 100 1
+erp_cust_az12 2 bdate date 3 1
+erp_cust_az12 3 gen nvarchar 100 1
+erp_cust_az12 4 dwh_create_date datetime2 8 1
+erp_loc_a101 1 cid nvarchar 100 1
+erp_loc_a101 2 cntry nvarchar 100 1
+erp_loc_a101 3 dwh_create_date datetime2 8 1
+erp_px_cat_g1v2 1 id nvarchar 100 1
+erp_px_cat_g1v2 2 cat nvarchar 100 1
+erp_px_cat_g1v2 3 subcat nvarchar 100 1
+erp_px_cat_g1v2 4 maintenance nvarchar 100 1
+erp_px_cat_g1v2 5 dwh_create_date datetime2 8 1
+crm_cust_info 18484 18484 18484 0
+crm_prd_info 397 397 295 0
+crm_sales_details 60398 27659 29356250 60423
+erp_cust_az12 18484 18484 0
+erp_loc_a101 18484 18484 0
+erp_px_cat_g1v2 37 37 0
+customer_integration 18484 0 0 57 4554
+erp_orphans 0 0
+gender n/a 4569
+gender Male 7067
+gender Female 6848
+country n/a 337
+country Germany 1780
+country United States 7482
+country Australia 3591
+country United Kingdom 1913
+country Canada 1571
+country France 1810
+birthdates 1916-02-10 1986-06-25 16 22
+category_gap CO_PE 7 7 7
+unused_category CO_PD Components Pedals No
+pedal_products 542 PD-M282 LL Mountain Pedal CO_PE 2013-07-01 NULL
+pedal_products 543 PD-M340 ML Mountain Pedal CO_PE 2013-07-01 NULL
+pedal_products 544 PD-M562 HL Mountain Pedal CO_PE 2013-07-01 NULL
+pedal_products 545 PD-R347 LL Road Pedal CO_PE 2013-07-01 NULL
+pedal_products 546 PD-R563 ML Road Pedal CO_PE 2013-07-01 NULL
+pedal_products 547 PD-R853 HL Road Pedal CO_PE 2013-07-01 NULL
+pedal_products 548 PD-T852 Touring Pedal CO_PE 2013-07-01 NULL
+line Mountain 112
+line n/a 17
+line Other Sales 54
+line Road 162
+line Touring 52
+history 295 2003-07-01 2013-07-01 0
+version_distribution 1 218
+version_distribution 2 52
+version_distribution 3 25
+current_key_failures 0
+sales_duplicate_keys 0
+sales_null_keys 0
+sales_references 0 0 60398
+naive_history_join 89818
+temporal_matches 0 18429
+temporal_matches 1 41969
+temporal_status WITHIN_HISTORY 41969
+temporal_status UNKNOWN_DATE 19
+temporal_status BEFORE_HISTORY 18410
+sales_by_year NULL 19 4992
+sales_by_year 2010 14 43419
+sales_by_year 2011 2216 7075088
+sales_by_year 2012 3397 5842231
+sales_by_year 2013 52782 16344878
+sales_by_year 2014 1970 45642
+category_affected_sales 0 NULL

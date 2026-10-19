@@ -1,0 +1,136 @@
+-- Run through run_customers.py; preview is the default. No Bronze/Silver writes.
+:ON ERROR EXIT
+SET NOCOUNT ON;
+SET XACT_ABORT ON;
+IF DB_NAME()<>'DataWarehouse' OR CONVERT(int,SERVERPROPERTY('EngineEdition'))<>3
+ OR CONVERT(nvarchar(128),SERVERPROPERTY('Edition')) NOT LIKE N'Developer Edition%'
+ OR ISNULL(CONVERT(varchar(48),CONNECTIONPROPERTY('local_net_address')),'')<>'127.0.0.1'
+ THROW 51600,'Expected verified local Developer DataWarehouse over loopback.',1;
+IF @@TRANCOUNT<>0 THROW 51601,'Run outside an existing transaction.',1;
+DECLARE @apply bit=$(apply),@lock int,@n bigint,@loaded_at datetime2(7)=SYSDATETIME();
+BEGIN TRY
+ BEGIN TRANSACTION;
+ EXEC @lock=sys.sp_getapplock @Resource=N'RetailFlow360.Gold.Customers',@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=10000;
+ IF @lock<0 THROW 51602,'Customer dimension lock unavailable.',1;
+ SELECT @n=COUNT_BIG(*) FROM silver.crm_cust_info WITH(TABLOCK,HOLDLOCK);
+ SELECT @n=COUNT_BIG(*) FROM silver.erp_cust_az12 WITH(TABLOCK,HOLDLOCK);
+ SELECT @n=COUNT_BIG(*) FROM silver.erp_loc_a101 WITH(TABLOCK,HOLDLOCK);
+ IF EXISTS(SELECT cst_id FROM silver.crm_cust_info GROUP BY cst_id HAVING COUNT(*)>1 OR cst_id IS NULL)
+ OR EXISTS(SELECT cst_key FROM silver.crm_cust_info GROUP BY cst_key HAVING COUNT(*)>1 OR NULLIF(TRIM(cst_key),'') IS NULL)
+ OR EXISTS(SELECT cid FROM silver.erp_cust_az12 GROUP BY cid HAVING COUNT(*)>1 OR NULLIF(TRIM(cid),'') IS NULL)
+ OR EXISTS(SELECT cid FROM silver.erp_loc_a101 GROUP BY cid HAVING COUNT(*)>1 OR NULLIF(TRIM(cid),'') IS NULL)
+ THROW 51603,'NULL/blank or duplicate integration keys.',1;
+ IF EXISTS(SELECT cst_key FROM silver.crm_cust_info EXCEPT SELECT cid FROM silver.erp_cust_az12)
+ OR EXISTS(SELECT cid FROM silver.erp_cust_az12 EXCEPT SELECT cst_key FROM silver.crm_cust_info)
+ OR EXISTS(SELECT cst_key FROM silver.crm_cust_info EXCEPT SELECT cid FROM silver.erp_loc_a101)
+ OR EXISTS(SELECT cid FROM silver.erp_loc_a101 EXCEPT SELECT cst_key FROM silver.crm_cust_info)
+ THROW 51604,'CRM/ERP coverage differs; review before loading.',1;
+ IF EXISTS(SELECT 1 FROM silver.crm_cust_info WHERE LOWER(TRIM(COALESCE(cst_gndr,''))) NOT IN('male','female','','n/a'))
+ OR EXISTS(SELECT 1 FROM silver.erp_cust_az12 WHERE LOWER(TRIM(COALESCE(gen,''))) NOT IN('male','female','','n/a'))
+ THROW 51605,'Unexpected gender domain; do not silently map new codes.',1;
+ ;WITH integrated AS (
+ SELECT c.*,e.bdate,l.cntry,
+ CASE LOWER(TRIM(c.cst_gndr)) WHEN 'male' THEN 'Male' WHEN 'female' THEN 'Female' END AS crm_gender,
+ CASE LOWER(TRIM(e.gen)) WHEN 'male' THEN 'Male' WHEN 'female' THEN 'Female' END AS erp_gender
+ FROM silver.crm_cust_info c
+ LEFT JOIN silver.erp_cust_az12 e ON e.cid=c.cst_key
+ LEFT JOIN silver.erp_loc_a101 l ON l.cid=c.cst_key
+ )
+ SELECT cst_id AS source_customer_id,cst_key AS customer_number,
+ cst_firstname AS first_name,cst_lastname AS last_name,
+ COALESCE(NULLIF(TRIM(cst_marital_status),''),'n/a') AS marital_status,
+ COALESCE(crm_gender,erp_gender,'n/a') AS gender,
+ CAST(CASE WHEN crm_gender IS NOT NULL THEN 'CRM' WHEN erp_gender IS NOT NULL THEN 'ERP' ELSE 'UNKNOWN' END AS nvarchar(50)) AS gender_source,
+ CAST(CASE WHEN crm_gender IS NOT NULL AND erp_gender IS NOT NULL AND crm_gender<>erp_gender THEN 1 ELSE 0 END AS bit) AS gender_conflict,
+ bdate AS birth_date,COALESCE(NULLIF(TRIM(cntry),''),'n/a') AS country,
+ cst_create_date AS customer_registration_date
+ INTO #expected FROM integrated;
+ IF (SELECT COUNT_BIG(*) FROM #expected)<>18484 THROW 51606,'Expected 18484 integrated customers.',1;
+ SELECT 'customer_profile' AS report,COUNT_BIG(*) AS customers,
+ SUM(CONVERT(int,gender_conflict)) AS gender_conflicts,
+ SUM(CASE WHEN gender_source='ERP' THEN 1 ELSE 0 END) AS missing_crm_gender_enriched,
+ SUM(CASE WHEN gender_source='UNKNOWN' THEN 1 ELSE 0 END) AS unresolved_gender,
+ SUM(CASE WHEN birth_date IS NULL THEN 1 ELSE 0 END) AS null_birthdates,
+ SUM(CASE WHEN NULLIF(TRIM(first_name),'') IS NULL THEN 1 ELSE 0 END) AS missing_first_names,
+ SUM(CASE WHEN NULLIF(TRIM(last_name),'') IS NULL THEN 1 ELSE 0 END) AS missing_last_names,
+ SUM(CASE WHEN country='n/a' THEN 1 ELSE 0 END) AS unknown_countries,
+ SUM(CASE WHEN customer_registration_date IS NULL THEN 1 ELSE 0 END) AS null_registration_dates
+ FROM #expected;
+ SELECT gender,gender_source,COUNT_BIG(*) AS customers FROM #expected GROUP BY gender,gender_source;
+ IF @apply=0
+ BEGIN
+  COMMIT TRANSACTION;
+  PRINT 'PREVIEW PASSED: source integration only; no Gold object created or loaded.';
+  RETURN;
+ END;
+ IF SCHEMA_ID('gold') IS NULL THROW 51607,'Gold schema missing; review required.',1;
+ IF OBJECT_ID('gold.dim_customers') IS NOT NULL AND OBJECT_ID('gold.dim_customers','U') IS NULL
+ THROW 51608,'Destination exists but is not a table.',1;
+ IF OBJECT_ID('gold.dim_customers','U') IS NULL
+ BEGIN
+ CREATE TABLE gold.dim_customers(
+ customer_key BIGINT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+ source_customer_id INT NOT NULL,
+ customer_number NVARCHAR(50) NOT NULL,
+ first_name NVARCHAR(50) NULL,
+ last_name NVARCHAR(50) NULL,
+ marital_status NVARCHAR(50) NOT NULL,
+ gender NVARCHAR(50) NOT NULL,
+ gender_source NVARCHAR(50) NOT NULL,
+ gender_conflict BIT NOT NULL,
+ birth_date DATE NULL,
+ country NVARCHAR(50) NOT NULL,
+ customer_registration_date DATE NULL,
+ gold_loaded_at DATETIME2(7) NOT NULL,
+ UNIQUE(source_customer_id), UNIQUE(customer_number),
+ CHECK(gender IN('Male','Female','n/a')),
+ CHECK(gender_source IN('CRM','ERP','UNKNOWN'))
+ );
+ END;
+ -- Reject unexpected existing metadata and side effects rather than redefining it.
+ IF EXISTS(SELECT 1 FROM sys.triggers WHERE parent_id=OBJECT_ID('gold.dim_customers') AND is_disabled=0)
+ THROW 51609,'Destination triggers require review.',1;
+ DECLARE @schema TABLE(n int,c sysname,t sysname,bytes int,nullable bit,identity_col bit);
+ INSERT @schema VALUES
+(1,'customer_key','bigint',8,0,1),
+(2,'source_customer_id','int',4,0,0),
+(3,'customer_number','nvarchar',100,0,0),
+(4,'first_name','nvarchar',100,1,0),
+(5,'last_name','nvarchar',100,1,0),
+(6,'marital_status','nvarchar',100,0,0),
+(7,'gender','nvarchar',100,0,0),
+(8,'gender_source','nvarchar',100,0,0),
+(9,'gender_conflict','bit',1,0,0),
+(10,'birth_date','date',3,1,0),
+(11,'country','nvarchar',100,0,0),
+(12,'customer_registration_date','date',3,1,0),
+(13,'gold_loaded_at','datetime2',8,0,0);
+ IF EXISTS(SELECT n,c,t,bytes,nullable,identity_col FROM @schema EXCEPT
+ SELECT column_id,name,TYPE_NAME(user_type_id),max_length,is_nullable,is_identity FROM sys.columns WHERE object_id=OBJECT_ID('gold.dim_customers'))
+ OR EXISTS(SELECT column_id,name,TYPE_NAME(user_type_id),max_length,is_nullable,is_identity FROM sys.columns WHERE object_id=OBJECT_ID('gold.dim_customers') EXCEPT SELECT n,c,t,bytes,nullable,identity_col FROM @schema)
+ THROW 51610,'Destination schema differs; no replacement allowed.',1;
+ SELECT @n=COUNT_BIG(*) FROM gold.dim_customers WITH(TABLOCKX,HOLDLOCK);
+ IF @n=0
+ BEGIN
+ INSERT gold.dim_customers(source_customer_id,customer_number,first_name,last_name,marital_status,gender,gender_source,gender_conflict,birth_date,country,customer_registration_date,gold_loaded_at)
+ SELECT source_customer_id,customer_number,first_name,last_name,marital_status,gender,gender_source,gender_conflict,birth_date,country,customer_registration_date,@loaded_at FROM #expected;
+ PRINT 'LOADED gold.dim_customers: pending validation and COMMIT.';
+ END
+ ELSE PRINT 'PRESERVED gold.dim_customers: checking exact values; keys/timestamps unchanged.';
+ IF (SELECT COUNT_BIG(*) FROM gold.dim_customers)<>18484
+ OR EXISTS(SELECT source_customer_id,CONVERT(varbinary(100),customer_number),CONVERT(varbinary(100),first_name),CONVERT(varbinary(100),last_name),CONVERT(varbinary(100),marital_status),CONVERT(varbinary(100),gender),CONVERT(varbinary(100),gender_source),gender_conflict,birth_date,CONVERT(varbinary(100),country),customer_registration_date FROM gold.dim_customers EXCEPT SELECT source_customer_id,CONVERT(varbinary(100),customer_number),CONVERT(varbinary(100),first_name),CONVERT(varbinary(100),last_name),CONVERT(varbinary(100),marital_status),CONVERT(varbinary(100),gender),CONVERT(varbinary(100),gender_source),gender_conflict,birth_date,CONVERT(varbinary(100),country),customer_registration_date FROM #expected)
+ OR EXISTS(SELECT source_customer_id,CONVERT(varbinary(100),customer_number),CONVERT(varbinary(100),first_name),CONVERT(varbinary(100),last_name),CONVERT(varbinary(100),marital_status),CONVERT(varbinary(100),gender),CONVERT(varbinary(100),gender_source),gender_conflict,birth_date,CONVERT(varbinary(100),country),customer_registration_date FROM #expected EXCEPT SELECT source_customer_id,CONVERT(varbinary(100),customer_number),CONVERT(varbinary(100),first_name),CONVERT(varbinary(100),last_name),CONVERT(varbinary(100),marital_status),CONVERT(varbinary(100),gender),CONVERT(varbinary(100),gender_source),gender_conflict,birth_date,CONVERT(varbinary(100),country),customer_registration_date FROM gold.dim_customers)
+ THROW 51611,'Destination differs from expected integration; no overwrite. Review changes.',1;
+ IF EXISTS(SELECT source_customer_id FROM gold.dim_customers GROUP BY source_customer_id HAVING COUNT(*)<>1)
+ OR EXISTS(SELECT customer_number FROM gold.dim_customers GROUP BY customer_number HAVING COUNT(*)<>1)
+ OR EXISTS(SELECT customer_key FROM gold.dim_customers GROUP BY customer_key HAVING COUNT(*)<>1)
+ OR EXISTS(SELECT 1 FROM gold.dim_customers WHERE customer_key<=0 OR gold_loaded_at IS NULL)
+ THROW 51612,'Destination uniqueness/metadata validation failed.',1;
+ COMMIT TRANSACTION;
+ PRINT 'COMMITTED: 18484 customers; exact integration, uniqueness and coverage passed.';
+END TRY
+BEGIN CATCH
+ IF XACT_STATE()<>0 ROLLBACK TRANSACTION;
+ SELECT ERROR_NUMBER() AS error_number,ERROR_MESSAGE() AS error_message,ERROR_STATE() AS error_state,ERROR_LINE() AS error_line;
+ THROW;
+END CATCH;

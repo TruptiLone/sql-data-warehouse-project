@@ -1,5 +1,11 @@
 # RetailFlow 360 — Local Data Warehouse
 
+> **Current deployment status (verified locally):** all three Gold objects are SQL
+> views: 18,484 customers, 295 products and 60,398 sales. The approved deployment
+> and full validation have completed. Statements below describing “prepared”,
+> “absent” or “awaiting approval” record the earlier design/preview stage.
+> Silver uses the validated `silver.refresh_all` implementation. No ETL was run for this commit.
+
 A local SQL Server warehouse that turns CRM and ERP CSV extracts into validated
 customer, product, and sales datasets. **Bronze and all six Silver tables are
 implemented. Gold dimensional modeling is planned.** Original source scripts and
@@ -75,7 +81,7 @@ AMD64 emulation and is not a production support claim.
 - [Sales rules](scripts/silver/SALES.md) and [final read-only audit](scripts/silver/SALES_AUDIT.md)
 - [ERP rules, distributions, and integration warnings](scripts/silver/ERP.md)
 
-Gold is planned: customer/product dimensions and a sales fact with explicit
+Gold uses: customer/product dimensions and a sales fact with explicit
 unknown keys and historical-match status. Preserve the 60,398-row sales grain;
 resolve temporal/category attribution policy before building analytical joins.
 
@@ -92,3 +98,16 @@ python3 local-sqlserver/scripts/silver/full_refresh/run.py preview
 
 Actual refresh and controlled rollback tests require explicit confirmation first.
 The legacy commands above remain available; they do not invoke the new refresh.
+
+
+## Gold — deployed view-based star schema
+
+Gold consists of deployed `gold.dim_customers`, `gold.dim_products` and
+`gold.fact_sales` views: **18,484 customers, 295 current products and 60,398 sales**.
+Post-deployment checks confirmed unique dimension keys, zero unmatched fact keys,
+complete sales-value reconciliation and unchanged Bronze/Silver rows and timestamps.
+Gold has no separate ETL load procedure. Dynamic ROW_NUMBER keys and current-product
+attribution require the documented analytical limitations.
+See the [logical model](docs/gold/LOGICAL_MODEL.md), [dictionary](docs/gold/DATA_DICTIONARY.md)
+and [instructor comparison](docs/gold/INSTRUCTOR_ALIGNMENT.md). The CO_PE/CO_PD
+category warning remains unresolved. The physical-table proposal was never implemented.

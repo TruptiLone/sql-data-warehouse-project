@@ -1,7 +1,13 @@
 # RetailFlow 360 — Data Warehouse Implementation & Data Quality Guide
 
-**Documentation status:** Bronze and all six Silver tables implemented and tested locally; Gold is **not built yet**.  
-**Last project update:** 2026-10-19.  
+> **Current deployment status (verified locally):** all three Gold objects are SQL
+> views: 18,484 customers, 295 products and 60,398 sales. The approved deployment
+> and full validation have completed. Statements below describing “prepared”,
+> “absent” or “awaiting approval” record the earlier design/preview stage.
+> Silver uses the validated `silver.refresh_all` implementation. No ETL was run for this commit.
+
+**Documentation status:** Bronze and all six Silver tables implemented and tested locally; Gold views are deployed and validated.
+**Last project update:** 2026-10-19.
 **Evidence basis:** Reviewed local SQL/Python source, read-only profiling and quality checks against the local Docker database, and preserved development reports. **The files under `local-sqlserver/scripts/` are the source of truth for exact executable logic.** Excerpts are labeled below; standalone examples are illustrative, not replacement loaders. Numeric results are a snapshot as of 2026-10-19, not guarantees for changed source data or a later date.
 
 **Full-refresh upgrade status:** the new `silver.refresh_all` procedure is implemented,
@@ -206,11 +212,14 @@ Read-only profiling often starts with patterns such as:
 
 ```sql
 -- Example: identify missing/duplicate CRM IDs before cleaning.
-SELECT COUNT(*) AS source_rows,
-       SUM(CASE WHEN cst_id IS NULL THEN 1 ELSE 0 END) AS null_ids
+SELECT
+    COUNT(*) AS source_rows,
+    SUM(CASE WHEN cst_id IS NULL THEN 1 ELSE 0 END) AS null_ids
 FROM bronze.crm_cust_info;
 
-SELECT cst_id, COUNT(*) AS occurrence_count
+SELECT
+    cst_id,
+    COUNT(*) AS occurrence_count
 FROM bronze.crm_cust_info
 WHERE cst_id IS NOT NULL
 GROUP BY cst_id
@@ -228,7 +237,7 @@ SELECT
     gen AS source_gender,
     CASE
         WHEN UPPER(TRIM(gen)) IN ('F', 'FEMALE') THEN 'Female'
-        WHEN UPPER(TRIM(gen)) IN ('M', 'MALE')   THEN 'Male'
+        WHEN UPPER(TRIM(gen)) IN ('M', 'MALE') THEN 'Male'
         ELSE 'n/a'
     END AS silver_gender
 FROM bronze.erp_cust_az12;
@@ -241,22 +250,39 @@ The point of the side-by-side preview is **auditability**: know exactly which va
 The following are **exact excerpts** from `scripts/silver/load_erp.sql`, shown without surrounding guards and checks. They are **not standalone runnable loaders**. Use `run_erp.py` to execute the complete implementation.
 
 ```sql
-;WITH normalized AS (
- SELECT CASE WHEN LEFT(TRIM(cid),3)='NAS' THEN SUBSTRING(TRIM(cid),4,50) ELSE TRIM(cid) END AS cid,
- CASE WHEN TRY_CONVERT(date,bdate)>@as_of THEN NULL ELSE TRY_CONVERT(date,bdate) END AS bdate,
- CAST(CASE UPPER(TRIM(gen)) WHEN 'M' THEN 'Male' WHEN 'MALE' THEN 'Male' WHEN 'F' THEN 'Female' WHEN 'FEMALE' THEN 'Female' ELSE 'n/a' END AS nvarchar(50)) AS gen
- FROM bronze.erp_cust_az12
-) SELECT * INTO #erp_cust_az12 FROM normalized;
+; WITH normalized AS (
+    SELECT
+        CASE WHEN LEFT(TRIM(cid), 3) = 'NAS' THEN SUBSTRING(TRIM(cid), 4, 50) ELSE TRIM(cid) END
+            AS cid,
+        CASE WHEN TRY_CONVERT(date, bdate) > @as_of THEN NULL ELSE TRY_CONVERT(date, bdate) END
+            AS bdate,
+        CAST(
+            CASE UPPER(TRIM(gen))
+                WHEN 'M' THEN 'Male' WHEN 'MALE' THEN 'Male' WHEN 'F' THEN 'Female' WHEN
+                    'FEMALE'
+                    THEN 'Female'
+                ELSE 'n/a'
+            END AS nvarchar(50)
+        ) AS gen
+    FROM bronze.erp_cust_az12
+)
+
+SELECT * INTO #erp_cust_az12 FROM normalized;
 ```
 
 The actual initial insert includes the warehouse timestamp:
 
 ```sql
-IF NOT EXISTS(SELECT 1 FROM silver.erp_cust_az12)
-BEGIN
- INSERT silver.erp_cust_az12(cid,bdate,gen,dwh_create_date) SELECT *,SYSDATETIME() FROM #erp_cust_az12;
- PRINT 'Inserted silver.erp_cust_az12';
-END
+IF NOT EXISTS (SELECT 1 FROM silver.erp_cust_az12)
+    BEGIN
+        INSERT silver.erp_cust_az12 (cid, bdate, gen, dwh_create_date)
+        SELECT
+            *,
+            SYSDATETIME()
+        FROM #erp_cust_az12
+        ;
+        PRINT 'Inserted silver.erp_cust_az12';
+    END
 ELSE PRINT 'Preserved silver.erp_cust_az12; checking expected values.';
 ```
 
@@ -383,13 +409,14 @@ The local rule assumes gross line sales without an explicit discount/return fiel
 ```sql
 SELECT *
 FROM silver.crm_sales_details
-WHERE sls_sales <> sls_quantity * sls_price
-   OR sls_sales IS NULL
-   OR sls_quantity IS NULL
-   OR sls_price IS NULL
-   OR sls_sales <= 0
-   OR sls_quantity <= 0
-   OR sls_price <= 0;
+WHERE
+    sls_sales <> sls_quantity * sls_price
+    OR sls_sales IS NULL
+    OR sls_quantity IS NULL
+    OR sls_price IS NULL
+    OR sls_sales <= 0
+    OR sls_quantity <= 0
+    OR sls_price <= 0;
 ```
 
 ### E. Unresolved historical product issue (do not “fix” silently)
@@ -504,12 +531,35 @@ USE DataWarehouse;
 GO
 
 -- Counts for six Silver tables.
-SELECT 'crm_cust_info' AS table_name, COUNT(*) AS rows_count FROM silver.crm_cust_info
-UNION ALL SELECT 'crm_prd_info', COUNT(*) FROM silver.crm_prd_info
-UNION ALL SELECT 'crm_sales_details', COUNT(*) FROM silver.crm_sales_details
-UNION ALL SELECT 'erp_cust_az12', COUNT(*) FROM silver.erp_cust_az12
-UNION ALL SELECT 'erp_loc_a101', COUNT(*) FROM silver.erp_loc_a101
-UNION ALL SELECT 'erp_px_cat_g1v2', COUNT(*) FROM silver.erp_px_cat_g1v2;
+SELECT
+    'crm_cust_info' AS table_name,
+    COUNT(*) AS rows_count
+FROM silver.crm_cust_info
+UNION ALL
+SELECT
+    'crm_prd_info',
+    COUNT(*)
+FROM silver.crm_prd_info
+UNION ALL
+SELECT
+    'crm_sales_details',
+    COUNT(*)
+FROM silver.crm_sales_details
+UNION ALL
+SELECT
+    'erp_cust_az12',
+    COUNT(*)
+FROM silver.erp_cust_az12
+UNION ALL
+SELECT
+    'erp_loc_a101',
+    COUNT(*)
+FROM silver.erp_loc_a101
+UNION ALL
+SELECT
+    'erp_px_cat_g1v2',
+    COUNT(*)
+FROM silver.erp_px_cat_g1v2;
 
 -- ERP customer IDs without CRM match (should be 0).
 SELECT COUNT(*) AS unmatched_customer_ids
@@ -520,9 +570,10 @@ WHERE c.cst_key IS NULL;
 -- Money-quality violations (should be 0).
 SELECT COUNT(*) AS invalid_sales_rows
 FROM silver.crm_sales_details
-WHERE sls_sales <> sls_quantity * sls_price
-   OR sls_sales IS NULL OR sls_quantity IS NULL OR sls_price IS NULL
-   OR sls_sales <= 0 OR sls_quantity <= 0 OR sls_price <= 0;
+WHERE
+    sls_sales <> sls_quantity * sls_price
+    OR sls_sales IS NULL OR sls_quantity IS NULL OR sls_price IS NULL
+    OR sls_sales <= 0 OR sls_quantity <= 0 OR sls_price <= 0;
 ```
 
 Use the project-specific quality scripts for full validation; these examples are only a subset.
@@ -640,3 +691,67 @@ the linked test report.
 See [execution instructions and test status](../scripts/silver/full_refresh/README.md).
 No incremental loading, Gold work, or additional source correction was performed.
 Populated-Silver TRUNCATE/INSERT ran only in the explicitly approved test suite.
+
+
+## 19. Reserved
+
+Silver continues to use the validated `silver.refresh_all` implementation.
+
+## 20. Gold Phase 1 — analysis and proposed logical model
+
+The [Gold design](gold/LOGICAL_MODEL.md) documents current source grains, candidate
+keys, integration evidence, conceptual relationships, logical star diagram and
+Bronze → Silver → Gold flow. The [dictionary](gold/DATA_DICTIONARY.md) specifies
+proposed columns, types, sources and nullability. These are proposals, not executed
+Gold DDL. Read-only profiling found no Gold objects, 18,484 fully matched customers,
+295 current products from 397 versions, and 60,398 sales. Current-product joins
+preserve all sales; an unconstrained historical join inflates to 89,818 rows and a
+strict temporal INNER JOIN retains only 41,969. Explicit exceptions and alternative
+historical-model choices are documented. Customer gender has 57 source conflicts;
+CRM precedence is proposed, not silently applied. Seven unmatched CO_PE products
+have no sales currently; category repair remains an approval decision.
+
+The rerunnable `scripts/gold/profile_model.py` verifies the local Docker connection
+and executes only the metadata/SELECT profile. It imports Bronze connection helpers
+without invoking ingestion, and never deploys pending Silver definitions. The saved
+aggregate evidence contains no credentials, raw CSV files, names or birthdates of
+individual customers. No refresh, Bronze/Silver changes, or Gold implementation was
+performed in this phase. Independent queries assume a quiet source window; use a
+consistent source snapshot when implementing production reconciliation.
+
+
+## 21. Historical physical customer proposal — superseded, never implemented
+
+[Customer implementation](gold/CUSTOMER_DIMENSION.md) documents the exact column
+mapping, transaction, source joins, gender rules and preview results. The proposed
+physical dimension uses persisted BIGINT IDENTITY keys and unique CRM IDs/external
+numbers. Matching reruns preserve keys and timestamps; changed-source mismatches
+stop without overwriting. The unknown member is deferred, keeping 18,484 customers.
+Source preview validated 57 conflicts, 4,554 ERP gender enrichments and 15 remaining
+unknown genders. Both ERP relationships have complete one-to-one coverage.
+
+The preview creates only a session temporary result, never a Gold object. The
+CREATE/INSERT apply path is prepared for review and awaits execution approval.
+Customer-only scope preserves all Bronze/Silver logic; product and sales Gold
+objects are not implemented. Target load/rerun tests remain pending.
+
+
+## 22. Active Gold architecture — virtual SQL views
+
+Gold uses SQL views over Silver, not physical tables or a separate ETL load procedure.
+The [customer view](gold/CUSTOMER_DIMENSION.md) uses CRM as master, LEFT JOINs both
+ERP sources, CRM-first known gender, and ROW_NUMBER ordered by ci.cst_id. Its ten
+business columns exclude Silver metadata. Dynamic row-number keys can change with
+the customer population and must not be treated as durable external identifiers.
+
+The three Gold views were subsequently created in customers → products → sales
+order and validated after approval. Counts are 18,484 / 295 / 60,398; dimension keys
+are unique and fact references complete. All projected sales values reconciled to
+Silver: sales amount 29,356,250 and quantity 60,423. All twelve Bronze/Silver
+fingerprints, including load timestamps, remained unchanged. Stored definitions
+matched the reviewed SQL after SQL Server DDL-verb normalization.
+
+Earlier sections record design and preview stages. The physical proposal was never
+implemented. The current Gold definitions are view-based, with no separate ETL
+loader. CO_PE/CO_PD, current-product historical attribution and dynamic surrogate
+keys remain documented limitations. No database work was performed for this commit.

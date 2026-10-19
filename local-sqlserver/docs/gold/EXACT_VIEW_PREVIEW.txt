@@ -1,0 +1,9 @@
+Verified local Docker identity, unchanged image/volume, and read-only source mount.
+customers 18484 18484 18484 18484
+products 295 295 295 295
+sales 60398 0 0 29356250 60423
+customer_reference_differences 0 0
+category_warning CO_PE 7
+customer_unknowns 15 16 337
+gender_audit 57 4554
+PASS: exact three SELECT bodies, key uniqueness, coverage and full fact reconciliation. No Gold DDL executed.

@@ -1,0 +1,9 @@
+Verified local Docker identity, unchanged image/volume, and read-only source mount.
+object_status ABSENT
+preview 18484 18484 18484 15 16 337
+gender_audit 57 4554 0
+coverage 0 0 0
+n/a 15
+Male 9341
+Female 9128
+PASS: exact proposed SELECT preview; no persistent DDL or data changes.

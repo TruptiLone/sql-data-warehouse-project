@@ -1,0 +1,7 @@
+Verified local Docker identity, unchanged image/volume, and read-only source mount.
+customers 18484 18484 18484 18484
+products 295 295 295 295
+sales 60398 0 0 29356250 60423
+category_warning CO_PE 7
+unused_category CO_PD Components Pedals No
+PASS: provisional star preview only; no Gold DDL executed.
