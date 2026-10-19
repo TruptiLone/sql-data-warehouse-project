@@ -1,0 +1,7 @@
+# Local SQL Server secrets and machine-specific files
+.env
+.env.*
+!.env.example
+
+# Editor and OS metadata
+.DS_Store
