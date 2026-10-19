@@ -1,0 +1,19 @@
+# RetailFlow 360 local-only SQL Server.
+# On Apple Silicon, SQL Server runs under unsupported x86_64 emulation.
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
+    container_name: retailflow-sql-local
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Developer"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Create a local .env file with a strong password}
+    ports:
+      - "127.0.0.1:14333:1433"
+    mem_limit: 4g
+    volumes:
+      - retailflow_sql_fresh:/var/opt/mssql
+
+volumes:
+  retailflow_sql_fresh:
