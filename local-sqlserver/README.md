@@ -38,8 +38,11 @@ Verified local snapshot: **2026-10-19**. Each name exists in both schemas.
 - Sales: all 60,398 rows retained; 35 monetary corrections, zero instructor-rule
   violations. The monetary assumption still needs business confirmation.
 - ERP: normalized customer/location IDs and values; 16 future birthdates set NULL.
-- Reruns preserve matching populated tables and timestamps; mismatches stop.
-  Bronze stays unchanged. No destructive refresh or incremental/CDC update exists.
+- Legacy runners preserve matching populated tables and timestamps. A new
+  transactional full-refresh procedure passed two approved refreshes and two
+  controlled rollback tests on 2026-10-19. Successful
+  full refreshes renew Silver timestamps; failures roll back. Bronze stays unchanged.
+  Incremental/CDC loading is not implemented.
 
 Known exceptions remain visible: **19 unknown order dates**, **18,410 sales before
 recorded product history**, **22 retained birthdates over 100 years old**, and the
@@ -75,3 +78,17 @@ AMD64 emulation and is not a production support claim.
 Gold is planned: customer/product dimensions and a sales fact with explicit
 unknown keys and historical-match status. Preserve the 60,398-row sales grain;
 resolve temporal/category attribution policy before building analytical joins.
+
+## Transactional full-refresh upgrade
+
+Review [the full-refresh procedure and acceptance results](scripts/silver/full_refresh/README.md).
+It reloads only the six Silver tables in one transaction and runs all critical
+SQL checks before commit. Existing transformations and known-exception reporting
+are preserved. Preview is safe and is the default:
+
+```bash
+python3 local-sqlserver/scripts/silver/full_refresh/run.py preview
+```
+
+Actual refresh and controlled rollback tests require explicit confirmation first.
+The legacy commands above remain available; they do not invoke the new refresh.

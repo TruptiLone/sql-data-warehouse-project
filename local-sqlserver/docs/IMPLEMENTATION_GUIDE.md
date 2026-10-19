@@ -4,6 +4,12 @@
 **Last project update:** 2026-10-19.  
 **Evidence basis:** Reviewed local SQL/Python source, read-only profiling and quality checks against the local Docker database, and preserved development reports. **The files under `local-sqlserver/scripts/` are the source of truth for exact executable logic.** Excerpts are labeled below; standalone examples are illustrative, not replacement loaders. Numeric results are a snapshot as of 2026-10-19, not guarantees for changed source data or a later date.
 
+**Full-refresh upgrade status:** the new `silver.refresh_all` procedure is implemented,
+deployed and tested after explicit approval: two refreshes committed and both
+controlled failure tests restored Silver exactly; Bronze remained unchanged. Sections 4–17 document the executed initial-load milestone. Section 18
+explains the new transaction/refresh semantics; do not confuse the historical
+no-op rerun behavior with the validated full refresh.
+
 ## 1. Purpose and business context
 
 RetailFlow 360 is a portfolio data-engineering project that converts raw CRM and ERP extracts into trusted, joinable datasets for retail customer, product, and sales analytics.
@@ -525,7 +531,7 @@ Use the project-specific quality scripts for full validation; these examples are
 
 The original repository DDL contains DROP/CREATE statements; local scripts deliberately do not execute them. A destructive full-refresh pattern may be useful as a teaching example, but the instructor lesson itself was not independently reviewed for this documentation audit. The verified local implementation is an **insert-if-empty, validate-if-populated load**: matching reruns leave Silver rows and timestamps unchanged; mismatches raise errors without replacement.
 
-This choice protects existing work and reduces the risk of accidentally running a destructive script against the wrong environment. It also requires a future design for changed-source refreshes, which we have **not yet implemented**. Neither technique is universally correct; the appropriate choice depends on refresh cadence, audit requirements, and source change semantics.
+This choice protects existing work and reduces the risk of accidentally running a destructive script against the wrong environment. This describes the original loaders; Section 18 adds a transactional full refresh, with fixed dataset contracts that require review when source counts or domains change. Neither technique is universally correct; the appropriate choice depends on refresh cadence, audit requirements, and source change semantics.
 
 ## 15. Known limitations and pending decisions
 
@@ -564,3 +570,73 @@ Use the actual files for operations, rather than copying illustrative fragments:
 For connection, initialization, lifecycle, and execution order, see [LOCAL_SETUP.md](LOCAL_SETUP.md). The Python runner deliberately pins a known image ID, volume name, container name, and mount path. A different Docker image/build or Compose project name requires inspection and an intentional configuration update; bypassing assertions is not a setup method. Run normal Python, not `python -O`, because some checks use assertions. SQL edition checks alone do not prove locality; use the verified Docker runner or documented container command.
 
 **Maintenance rule:** update this guide when an implementation or business assumption changes. Numerical claims should always be rechecked against the runnable quality scripts; descriptive examples should not replace executable source code.
+
+## 18. Transactional full-refresh upgrade (validated 2026-10-19)
+
+The new [full-refresh implementation](../scripts/silver/full_refresh/README.md)
+preserves all cleaning expressions and source files while changing orchestration.
+[build.py](../scripts/silver/full_refresh/build.py) composes the existing loaders
+and quality checks into [refresh_all.sql](../scripts/silver/full_refresh/refresh_all.sql).
+Source hashes and a regeneration check detect stale generated logic.
+
+### Profile and preflight
+
+Existing profiles remain the evidence for each rule. Fresh metadata inspection
+found all six Silver tables to be ordinary disk tables, with no foreign keys,
+enabled triggers, CDC, temporal history or replication. The procedure checks
+these restrictions on every call, including indexed views and the 39-column
+schema contract. It rejects caller-owned transactions and checks local loopback,
+SQL machine identity, Developer Edition and DataWarehouse. The Python runner
+also verifies Docker identity, volume, image and host port mapping.
+
+### TRUNCATE and INSERT
+
+The procedure acquires a transaction-owned application lock, then source/target
+locks inside one BEGIN TRANSACTION. Explicitly confirmed refresh mode truncates
+only the six named Silver tables. Sales is cleared before CRM parent tables;
+however, foreign keys would still block SQL Server TRUNCATE, so the procedure
+rejects them instead of disabling constraints. Bronze and Gold are never targets.
+
+Insertion follows CRM customers/products → CRM sales → ERP customers/locations/
+categories. The existing source guard, CTE, TRY_CONVERT, deterministic ROW_NUMBER,
+LEAD, mapping, and INSERT column logic is reused. All rows receive one shared
+run timestamp. Fixed expected Silver counts remain 18,484 / 397 / 60,398 / 18,484 /
+18,484 / 37, alongside source-derived reconciliation. No business rule changes.
+
+### Validation before COMMIT
+
+Unlike the initial runners, all existing SQL quality scripts now execute before
+the single outer COMMIT. Complete expected-result comparisons, counts, duplicate
+and NULL keys, date/domain checks, arithmetic, chronology, product history, and
+CRM/ERP customer/location coverage are critical gates. The seven reviewed country
+values are explicitly gated. New datasets/domains require a contract review.
+
+The 19 unknown order dates, 18,410 pre-history sales, old ERP birthdates and
+CO_PD/CO_PE category discrepancy remain visible warnings; none is silently fixed
+or grounds for rejecting the unchanged source. Any critical exception reaches
+TRY/CATCH, rolls back the entire transaction, emits error/run details, and is
+rethrown. Former post-commit Python comparisons remain supplementary evidence,
+not substitutes for these SQL commit gates.
+
+### Reruns and rollback evidence
+
+A successful full refresh replaces Silver rows **and refreshes timestamps**;
+business values stay repeatable for unchanged sources. A failure restores all
+six tables and their previous timestamps. The original legacy scripts are
+preserved and still have insert-if-empty behavior.
+
+Preview passed against current populated Silver with all twelve table fingerprints
+unchanged. Missing-confirmation rejection passed, and a disposable temporary-table
+TRUNCATE/INSERT rollback test passed. After explicit approval, the acceptance
+runner completed two successful refreshes, preserving all business values and
+renewing all six timestamps. Injected errors 51390 after truncation and 51391 at
+the actual pre-commit row-count gate each restored all Silver values and timestamps
+exactly. Full fingerprints confirmed all 116,294 Bronze rows unchanged. Final
+Silver counts remained 18,484 / 397 / 60,398 / 18,484 / 18,484 / 37. All 10 CRM,
+14 sales, and ERP quality checks passed; documented source exceptions remained
+visible. The runner exited with code 0. Run IDs and timestamps are recorded in
+the linked test report.
+
+See [execution instructions and test status](../scripts/silver/full_refresh/README.md).
+No incremental loading, Gold work, or additional source correction was performed.
+Populated-Silver TRUNCATE/INSERT ran only in the explicitly approved test suite.

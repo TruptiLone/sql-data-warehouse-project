@@ -1,5 +1,9 @@
 # Phase 5: local CRM Silver
 
+> Full-refresh upgrade: [implementation and test results](full_refresh/README.md).
+> The legacy scripts described below remain unchanged. Full-refresh timestamps
+> renew on success; two approved refreshes and both rollback tests passed.
+
 Run from the repository root:
 
 ```bash
