@@ -1,0 +1,9 @@
+# Machine metadata and generated Python caches
+.DS_Store
+__pycache__/
+*.py[cod]
+
+# Local credentials; only the sanitized template belongs in Git
+.env
+.env.*
+!.env.example

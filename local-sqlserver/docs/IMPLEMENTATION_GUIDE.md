@@ -2,7 +2,7 @@
 
 **Documentation status:** Bronze and all six Silver tables implemented and tested locally; Gold is **not built yet**.  
 **Last project update:** 2026-10-19.  
-**Evidence basis:** Codex execution summaries shared during development, the earlier source DDL, and the Udemy instructor's transformation lesson. **The local files under `local-sqlserver/scripts/` are the source of truth for exact executable logic.** The snippets below explain important patterns; they are not a verbatim copy of unpushed scripts.
+**Evidence basis:** Reviewed local SQL/Python source, read-only profiling and quality checks against the local Docker database, and preserved development reports. **The files under `local-sqlserver/scripts/` are the source of truth for exact executable logic.** Excerpts are labeled below; standalone examples are illustrative, not replacement loaders. Numeric results are a snapshot as of 2026-10-19, not guarantees for changed source data or a later date.
 
 ## 1. Purpose and business context
 
@@ -49,7 +49,7 @@ A **data warehouse** brings operational data from multiple systems into a consis
 
 | Layer | Purpose | What happens in this project |
 | --- | --- | --- |
-| **Bronze** | Preserve source records for traceability and reprocessing | Load six CSV files with source structure/values intact; record counts and check raw quality |
+| **Bronze** | Preserve source records for traceability and reprocessing | Load six CSV files using the original typed DDL; preserve parsed field meaning and record counts, including anomalies |
 | **Silver** | Produce consistent, clean, joinable records | Fix invalid values, standardize codes/keys, deduplicate CRM customers, type dates, reconcile across systems, record exceptions |
 | **Gold** | Provide business-facing dimensional models and stable metrics | **Planned:** customer/product dimensions and sales fact with safe historical joins |
 
@@ -113,11 +113,11 @@ sql-data-warehouse-project/
         └── IMPLEMENTATION_GUIDE.md
 ```
 
-Other profiling, verification, and documentation files exist in the local Silver folder. The exact inventory should be confirmed before the next commit.
+Additional exact sources include `profile_crm.sql`, `profile_sales.sql`, `profile_erp.sql`, `quality_checks.sql`, and `quality_sales.sql`. See the linked script inventory in section 17. Personal inspection scratch files are not part of the supported loading workflow.
 
 ## 4. Chronological implementation log
 
-1. **Provision local tooling.** Docker Desktop installed; Rosetta enabled; 8 GB Docker VM memory. Basic AMD64 container execution confirmed.
+1. **Provision local tooling.** The development notes record Docker Desktop, x86-64 emulation on Apple Silicon, and approximately 8 GB Docker VM memory. These are historical workstation details, not settings enforced by the repository.
 2. **Start SQL Server safely.** Switched from an error-prone manual `docker run` to project-local Docker Compose, a secret `.env`, persistent named volume, and localhost-only port mapping. Codex verified `SELECT @@VERSION` and a healthy running container.
 3. **Connect VS Code.** Microsoft SQL Server (mssql) extension connected to local `127.0.0.1` port `14333` using SQL Login; earlier Azure profile was kept separate.
 4. **Initialize database.** Created local `DataWarehouse` and `bronze`, `silver`, `gold` schemas using an idempotent script. Initial user table count: zero.
@@ -125,7 +125,7 @@ Other profiling, verification, and documentation files exist in the local Silver
 6. **Load Bronze datasets.** Used a CSV-aware source count, read-only dataset bind mount, SQL loading scripts and Python runner. Handled final CSV rows with no newline through lossless Unicode import copies. Verified complete record fidelity and rerun behavior.
 7. **Build Silver CRM customers/products.** Profiled raw values, transformed, inserted, reconciled counts, and tested reruns.
 8. **Build Silver CRM sales.** Converted dates, repaired documented monetary anomalies, validated chronology and arithmetic, preserved unresolved historical exceptions.
-9. **Build Silver ERP customers/location/categories.** Standardized source identifiers and categories, verified CRM/ERP linkability, inserted, and reconciled counts.
+9. **Build Silver ERP customers/location/categories.** Standardized customer/location values; preserved already-clean category attributes; reported unmatched category keys; inserted and reconciled counts.
 10. **Gold model.** Not yet implemented.
 
 ## 5. Bronze: CSV ingestion, profiling, and validation
@@ -147,10 +147,10 @@ Other profiling, verification, and documentation files exist in the local Silver
 1. **Inspect each source file:** header, encoding, quoting, delimiter, field shape, and CSV-aware row count (not just newline count).
 2. **Inspect table DDL:** verify column name, order, type, and length. The six tables contain 32 columns in total.
 3. **Make files available to SQL Server:** use a read-only Docker bind mount; preserve the database's persistent storage volume.
-4. **Handle special file formatting:** some source CSVs have no final newline. The import process used lossless Unicode copies so the final record was not lost.
+4. **Handle special file formatting:** CRM customers, ERP customers, and ERP categories have no final newline. `load_bronze.py` writes UTF-16 CSV copies with a BOM, LF separators, and a final newline under ignored `datasets/.bulk/`, then reparses them to verify field equality. Original UTF-8 files remain untouched. SQL uses `FORMAT='CSV'`, `DATAFILETYPE='widechar'`, `ROWTERMINATOR='0x0a00'`, `FIRSTROW=2`, and `KEEPNULLS`; Linux rejected the earlier CODEPAGE option.
 5. **Load into empty Bronze tables:** the runner plus transactional SQL loader imported raw records without cleaning them.
 6. **Reconcile:** source record counts and SQL table counts must match; compare first and last records and repeated-record occurrence counts.
-7. **Check reruns:** re-execution skips already populated, validated tables rather than appending duplicates.
+7. **Check reruns:** SQL skips any populated table without writing to it. Python subsequently compares every table with the source, including skipped tables; a mismatch raises an error and is not auto-repaired. SQL count checks occur before its transaction commits, but Python full-row validation occurs after commit.
 8. **Record source anomalies without changing Bronze:** identify invalid IDs, duplicates, unexpected NULLs, and possible referential issues.
 
 ### Bronze findings
@@ -160,6 +160,8 @@ Other profiling, verification, and documentation files exist in the local Silver
 - CRM sales: no repeated order/product combinations.
 - All six source files: no full-row duplicates, import-count mismatches, or successful-load errors.
 - The entire original Bronze population (**116,294 rows**) remained unchanged through subsequent Silver processing.
+
+Bronze preserves typed source meaning, not CSV byte-for-byte storage: empty fields become NULL, dates/numbers use the original DDL types, and import encoding/line endings change only in derived copies.
 
 Raw customer counts differ from Silver by 10 rows because the curated customer master excludes four NULL IDs and consolidates six excess occurrences.
 
@@ -230,41 +232,40 @@ The point of the side-by-side preview is **auditability**: know exactly which va
 
 ### Insert into Silver and verify
 
-A conceptual **initial-load-only** SQL pattern (illustrative, **not** the exact unpushed loader source) is:
+The following are **exact excerpts** from `scripts/silver/load_erp.sql`, shown without surrounding guards and checks. They are **not standalone runnable loaders**. Use `run_erp.py` to execute the complete implementation.
 
 ```sql
-USE DataWarehouse;
-GO
-
--- Inspect target first. Only load if not already populated.
-IF NOT EXISTS (SELECT 1 FROM silver.erp_cust_az12)
-BEGIN
-    BEGIN TRY
-        BEGIN TRANSACTION;
-
-        INSERT INTO silver.erp_cust_az12 (cid, bdate, gen)
-        SELECT
-            CASE WHEN cid LIKE 'NAS%' THEN SUBSTRING(cid, 4, LEN(cid))
-                 ELSE cid END,
-            CASE WHEN bdate > CAST(GETDATE() AS date) THEN NULL
-                 ELSE bdate END,
-            CASE
-                WHEN UPPER(TRIM(gen)) IN ('F','FEMALE') THEN 'Female'
-                WHEN UPPER(TRIM(gen)) IN ('M','MALE') THEN 'Male'
-                ELSE 'n/a'
-            END
-        FROM bronze.erp_cust_az12;
-
-        COMMIT TRANSACTION;
-    END TRY
-    BEGIN CATCH
-        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
-        THROW;
-    END CATCH;
-END;
+;WITH normalized AS (
+ SELECT CASE WHEN LEFT(TRIM(cid),3)='NAS' THEN SUBSTRING(TRIM(cid),4,50) ELSE TRIM(cid) END AS cid,
+ CASE WHEN TRY_CONVERT(date,bdate)>@as_of THEN NULL ELSE TRY_CONVERT(date,bdate) END AS bdate,
+ CAST(CASE UPPER(TRIM(gen)) WHEN 'M' THEN 'Male' WHEN 'MALE' THEN 'Male' WHEN 'F' THEN 'Female' WHEN 'FEMALE' THEN 'Female' ELSE 'n/a' END AS nvarchar(50)) AS gen
+ FROM bronze.erp_cust_az12
+) SELECT * INTO #erp_cust_az12 FROM normalized;
 ```
 
-**Caution:** This is a learning example, not the project's exact runnable loader. The real source files must be used to confirm column lists, metadata fields, reconciliation checks, safe reload behavior, and date policy. The implementation reported **no destructive refresh, no duplicate inserts, and no unnecessary timestamp changes** on reruns. Skipping populated tables prevents duplication but alone does not solve changed-source updates; incremental refresh design is future work.
+The actual initial insert includes the warehouse timestamp:
+
+```sql
+IF NOT EXISTS(SELECT 1 FROM silver.erp_cust_az12)
+BEGIN
+ INSERT silver.erp_cust_az12(cid,bdate,gen,dwh_create_date) SELECT *,SYSDATETIME() FROM #erp_cust_az12;
+ PRINT 'Inserted silver.erp_cust_az12';
+END
+ELSE PRINT 'Preserved silver.erp_cust_az12; checking expected values.';
+```
+
+The complete loader starts a transaction **before** taking source/reference and exclusive target locks or inspecting target emptiness. `@as_of` is the database date captured at the start. It checks normalized IDs, inserts only into empty targets, then compares counts and complete expected/actual business columns in both directions with `EXCEPT` and binary string comparisons. It also checks duplicate IDs and warehouse timestamps before committing. Existing targets must match or the transaction raises an error; it never silently updates them.
+
+| Loader | Transaction scope | Checks before commit | Additional checks after commit |
+| --- | --- | --- | --- |
+| Bronze SQL | All initially empty Bronze tables in one transaction | Import errors and CSV-aware supplied counts for loaded tables | Python full typed-row multiset, boundary-record, and skipped-table validation |
+| CRM SQL | Customer and product inserts together | Source guards; expected row equality/counts; business IDs; audit timestamps | Ten SQL quality assertions; rerun and Bronze/Silver fingerprints |
+| Sales SQL | Sales insert only | Guards, safe arithmetic, reference/chronology checks, exact expected result and count | Fourteen SQL assertions; independent Python oracle; rerun/fingerprints |
+| ERP SQL | All three ERP inserts together | Transformed IDs; exact expected rows/counts; audit timestamps; customer gender/date guard | Additional SQL domains/category checks, reported integration gaps, independent Python oracle, rerun/fingerprints |
+
+All SQL loaders use `SET XACT_ABORT ON` and TRY/CATCH rollback. **A failure in a separate post-commit check cannot retroactively roll back the committed load.** No runner automatically clears or repairs a populated table. DDL executes separately from loads. The routines are batch scripts, not stored procedures.
+
+Silver inserts explicitly list the original business columns plus `dwh_create_date`, selecting the transformed temporary rows and `SYSDATETIME()`. DDL retains `DATETIME2 DEFAULT GETDATE()` for compatibility; existing timestamps are not rewritten. Profiling scripts are separate, read-only steps, not automatically run by each loading runner. The preview diagram above describes the development workflow, not an orchestrated pipeline engine.
 
 ### Verify the Silver results
 
@@ -285,9 +286,11 @@ END;
 | Profile | 18,494 raw records; 4 NULL IDs; 5 duplicated ID groups and 6 excess occurrences |
 | Transform | Exclude NULL-ID rows from curated customer master; choose a consistent winner for repeated valid IDs; trim strings; standardize gender and marital-status values |
 | Insert | Load cleaned, deduplicated customer rows using local loader; preserve source Bronze table |
-| Validate | **18,484 Silver rows**; unique valid customer IDs; independently checked transformations; rerun preserved values and load timestamps |
+| Validate | **18,484 Silver rows**; unique valid customer IDs; SQL expected-result comparison and separate quality assertions; rerun preserved values and load timestamps |
 
-The precise duplicate tie-break rule belongs to `local-sqlserver/scripts/silver/load_crm.sql` and related profiling/quality files. **Do not assume an arbitrary `ROW_NUMBER` order:** a deterministic and business-defensible sort matters.
+The exact winner order in `load_crm.sql` is creation date descending, then raw customer key, first name, last name, marital status, and gender descending as `varbinary(100)`. This avoids case-insensitive/padded-string tie ambiguity; completely identical rows yield the same output. Customer key and names are trimmed. S/M marital codes map to Single/Married; F/M genders map to Female/Male; other values become n/a. Retained rows with missing keys/dates or future creation dates stop the loader. All four missing creation dates belong to the excluded NULL-ID rows.
+
+CRM customer/product validation uses SQL staged expected results and independent quality assertions, **not** a separate Python transformation oracle. Python supplies content fingerprints and rerun checks for this phase.
 
 **Count reconciliation:** 18,494 − 4 NULL-ID rows − 6 duplicate excess occurrences = **18,484**.
 
@@ -302,7 +305,7 @@ The precise duplicate tie-break rule belongs to `local-sqlserver/scripts/silver/
 | Insert | Keep all 397 product-version records, including historical rows |
 | Validate | **397 Silver rows**: **102 closed versions** and **295 current versions**; transformed values verified; rerun stable |
 
-**Important:** A cost of zero may mean “unknown cost” rather than free inventory. Document that assumption. Product history requires validation for temporal gaps, overlaps, and sales occurring before the first known version. The reported 200 repaired dates should be reviewed in the exact implementation to ensure valid non-overlapping intervals.
+**Important:** A cost of zero may mean “unknown cost” rather than free inventory. Document that assumption. Product history requires validation for temporal gaps, overlaps, and sales occurring before the first known version. The loader trims the raw key, derives the category from its first five characters with hyphen-to-underscore replacement, and takes the product key from position seven. M/R/S/T product lines map to Mountain/Road/Other Sales/Touring; other values become n/a. It rejects ambiguous normalized-key/start-date pairs and cross-category key collisions. `LEAD(prd_start_dt)` partitions by normalized key and orders by start date then prd_id; the prior end becomes next start minus one day, and the latest end is NULL. All 200 changed ends correspond to reversed source ranges. There are no non-midnight starts or negative costs in the current source.
 
 ## 9. Silver CRM sales transformation and quality audit
 
@@ -314,10 +317,10 @@ The precise duplicate tie-break rule belongs to `local-sqlserver/scripts/silver/
 
 ### B. Date transformation
 
-Convert the three integer `YYYYMMDD` columns to actual `DATE` values using SQL Server style 112 and safe `TRY_CONVERT`. For example:
+Convert the three integer `YYYYMMDD` columns to actual `DATE` values using SQL Server style 112. This **exact order-date expression** from `load_sales.sql` includes the essential length guard; TRY_CONVERT alone may interpret a short token such as 5489 as a year:
 
 ```sql
-TRY_CONVERT(date, CAST(sls_order_dt AS varchar(20)), 112)
+CASE WHEN LEN(CONVERT(varchar(11),sls_order_dt))=8 THEN TRY_CONVERT(date,CONVERT(varchar(11),NULLIF(sls_order_dt,0)),112) END AS sls_order_dt
 ```
 
 | Date check | Result |
@@ -332,7 +335,7 @@ TRY_CONVERT(date, CAST(sls_order_dt AS varchar(20)), 112)
 | Same-day order/ship or order/due | 0 |
 | Orders with unknown dates | **19**, retained and not chronologically comparable |
 
-Date comparisons use valid converted values; NULLs do not establish a chronology.
+Date comparisons use valid converted values; NULLs do not establish a chronology. The audit defines the 1900–2050 range as 1900-01-01 through 2050-12-31 inclusive, and reports it separately from malformed and invalid-calendar categories. That range is not an automatic load-time exclusion policy.
 
 ### C. Monetary transformation and source traceability
 
@@ -358,7 +361,11 @@ Example original-to-cleaned values:
 - `SO61570 / CA-1098`: sales −18, quantity 1, price 9 → sales 9.
 - `SO57804 / BK-M38S-40`: price −769, sales 769, quantity 1 → price 769.
 
-These changes are **traceable to unchanged Bronze rows**, but whether negative amounts represent errors or genuine refunds/returns requires business confirmation. The cleaning logic intentionally did not blindly apply `ABS()` everywhere.
+These changes are **traceable to unchanged Bronze rows**, but whether negative amounts represent errors or genuine refunds/returns requires business confirmation. `scripts/silver/transform_crm_sales.sql` was empty during implementation, so the monetary policy is a documented local assumption rather than an existing executable instructor rule.
+
+The exact policy preserves positive quantities and positive unit prices, recomputing sales as their product. If price is NULL/nonpositive, positive sales divided by quantity must give an exact positive integer price. Missing/nonpositive quantities, unresolvable pairs, nonintegral quotients, and INT overflow stop the load. BIGINT intermediates protect arithmetic. No blind ABS(), rounding, or arbitrary zero defaults are used. There are 23 changed sales amounts (8 NULL, 2 zero, 3 negative, 10 other inconsistent) and 12 changed prices (7 NULL, 5 negative). Source known-sales total is 29,355,502; Silver is 29,356,250 (+748).
+
+The local rule assumes gross line sales without an explicit discount/return field. The audit pairs all 35 changes by unique order/product key, but there is no persisted correction-event ledger; the warehouse timestamp is a load timestamp.
 
 ### D. Insert and validate
 
@@ -403,15 +410,16 @@ One example is `SO46676 / BK-R64Y-42`, preceding its product's earliest version 
 1. **CID normalization:** remove the initial `NAS` prefix only when present. **11,042** identifiers affected.
 2. **Birthdate validity:** convert **16 future birthdates to NULL**; retain **22 birthdates older than 100 years** as potentially valid but flagged. Oldest reported in the group: 1916-02-10; most recent in that group: 1926-09-07.
 3. **Gender normalization:** trim and case-normalize abbreviations/full names to `Male`, `Female`, or `n/a`; **1,485** rows affected.
-4. **Join check:** every standardized ERP CID matches a CRM customer key.
+4. **Join check:** every standardized ERP CID matches CRM **cst_key**, not integer cst_id; unmatched counts are reported in both directions. The old-date threshold is strictly earlier than DATEADD(year,-100,@as_of), evaluated as of 2026-10-19. Those 22 dates are retained. All 16 Silver NULL birthdates originate from future dates; Bronze has zero NULL birthdates.
 
 Illustrative transformation snippets:
 
 ```sql
-CASE WHEN cid LIKE 'NAS%' THEN SUBSTRING(cid, 4, LEN(cid))
-     ELSE cid END AS cid,
-CASE WHEN bdate > CAST(GETDATE() AS date) THEN NULL
-     ELSE bdate END AS bdate,
+-- Illustrative equivalent of the mapping; @as_of is declared by the full loader.
+CASE WHEN LEFT(TRIM(cid),3)='NAS' THEN SUBSTRING(TRIM(cid),4,50)
+     ELSE TRIM(cid) END AS cid,
+CASE WHEN TRY_CONVERT(date,bdate)>@as_of THEN NULL
+     ELSE TRY_CONVERT(date,bdate) END AS bdate,
 CASE WHEN UPPER(TRIM(gen)) IN ('F','FEMALE') THEN 'Female'
      WHEN UPPER(TRIM(gen)) IN ('M','MALE') THEN 'Male'
      ELSE 'n/a' END AS gen
@@ -428,15 +436,15 @@ CASE WHEN UPPER(TRIM(gen)) IN ('F','FEMALE') THEN 'Female'
 ### Profile and transform
 
 1. **CID normalization:** remove hyphens to match CRM customer identifiers; **18,484** rows affected.
-2. **Country standardization:** trim whitespace, map `DE` to Germany and `US`/`USA` to United States, and represent blank/NULL as `n/a`; **4,994** values changed. **The actual file uses `DE`, not the instructor's example `D`.**
+2. **Country standardization:** trim whitespace, map `DE` to Germany and `US`/`USA` to United States, and represent blank/NULL as `n/a`; **4,994** values changed. **The loader supports both D and DE; the actual file uses DE, not the supplied D example.** The 4,994 changes comprise 566 DE, 1,500 US, 2,591 USA, 332 NULL, and 5 whitespace-only values.
 3. **Join check:** verify standardized location CIDs match CRM customers.
 
 Illustrative expressions:
 
 ```sql
-REPLACE(cid, '-', '') AS cid,
+REPLACE(TRIM(cid), '-', '') AS cid,
 CASE
-    WHEN UPPER(TRIM(cntry)) = 'DE' THEN 'Germany'
+    WHEN UPPER(TRIM(cntry)) IN ('D', 'DE') THEN 'Germany'
     WHEN UPPER(TRIM(cntry)) IN ('US', 'USA') THEN 'United States'
     WHEN NULLIF(TRIM(cntry), '') IS NULL THEN 'n/a'
     ELSE TRIM(cntry)
@@ -454,7 +462,7 @@ END AS cntry
 ### Profile, transform, and insert
 
 - Check `id`, `cat`, `subcat`, and `maintenance` for empty values, unwanted whitespace, domain consistency, and duplicate keys.
-- Instructor found this dataset already clean; our profile also required **0 attribute changes**.
+- The supplied rule was to preserve already-clean values; actual local profiling confirmed **0 attribute changes**, 0 NULL/empty attributes, 0 whitespace anomalies, and no conflicting subcategory-to-category mappings.
 - Still load it into Silver to maintain a consistent contract across all six tables.
 - **37 Bronze → 37 Silver**, **37 distinct category IDs**; rerun verification passed.
 
@@ -476,7 +484,7 @@ ERP category key `CO_PD` (“Pedals”) lacks a matching CRM category; CRM `CO_P
 | `erp_px_cat_g1v2` | 37 | 37 | No exclusions |
 | **Total (table-row sum)** | **116,294** | **116,284** | **10 explained customer-row reductions** |
 
-**Reported validation coverage:**
+**Verified validation coverage (2026-10-19 snapshot):**
 - Bronze: all six CSV record counts and row-level comparisons passed; rerunning did not append duplicates.
 - CRM customer/product: **10 quality checks** passed; complete transformed-value comparison passed.
 - CRM sales: **14 quality checks** passed; instructor monetary query yielded **0 violations**; chronology and date audits passed.
@@ -515,7 +523,7 @@ Use the project-specific quality scripts for full validation; these examples are
 
 ## 14. Why our loading approach differs from the instructor
 
-The course demonstrates a full refresh that **TRUNCATEs each Silver table before INSERT**. That prevents accumulating duplicates but discards and reloads rows each time. Our local implementation instead reported a **non-destructive, safely rerunnable load**: a second execution left Silver rows and load timestamps unchanged.
+The original repository DDL contains DROP/CREATE statements; local scripts deliberately do not execute them. A destructive full-refresh pattern may be useful as a teaching example, but the instructor lesson itself was not independently reviewed for this documentation audit. The verified local implementation is an **insert-if-empty, validate-if-populated load**: matching reruns leave Silver rows and timestamps unchanged; mismatches raise errors without replacement.
 
 This choice protects existing work and reduces the risk of accidentally running a destructive script against the wrong environment. It also requires a future design for changed-source refreshes, which we have **not yet implemented**. Neither technique is universally correct; the appropriate choice depends on refresh cadence, audit requirements, and source change semantics.
 
@@ -535,7 +543,7 @@ This choice protects existing work and reduces the risk of accidentally running 
 
 ## 16. Next steps and acceptance criteria
 
-1. **Commit and push the current local Bronze/Silver milestone:** review `git status`, verify no secrets/datasets staged, commit only intended code/docs/config, and push only after reconciling upstream changes.
+1. **Maintain the Bronze/Silver milestone:** review each change, keep source data/secrets out of Git, and synchronize upstream without discarding unrelated work.
 2. **Gold model design:** define grain and keys for `gold.dim_customers`, `gold.dim_products`, `gold.fact_sales`. Resolve one-to-many/history issues **before** coding.
 3. **Preserve fact grain:** ensure **60,398** source sales produce **60,398** Gold fact records, not 18,429 missing or 89,818 duplicated.
 4. **Explicit unknown relationships:** unresolved product-version, category, and date cases need documented handling and match-status metrics.
@@ -544,10 +552,15 @@ This choice protects existing work and reduces the risk of accidentally running 
 
 ## 17. Reference scripts and reproducibility
 
-Use the SQL and Python files in `local-sqlserver/scripts/` for executable operations. The key reference docs reported by Codex are:
-- Bronze: `scripts/bronze/README.md` and `quality_checks.sql`.
-- CRM customer/products: `scripts/silver/load_crm.sql`, `quality_checks.sql`, and related profiling files.
-- Sales: `scripts/silver/load_sales.sql`, `quality_sales.sql`, `audit_sales.sql`, `SALES.md`, and `SALES_AUDIT.md`.
-- ERP: `scripts/silver/load_erp.sql`, `quality_erp.sql`, and `ERP.md`.
+Use the actual files for operations, rather than copying illustrative fragments:
+
+| Phase | Profile | Exact DDL/load/runner | Post-load validation and evidence |
+| --- | --- | --- | --- |
+| Bronze | CSV-aware profiling in Python | [DDL](../scripts/bronze/ddl_bronze.sql), [SQL load](../scripts/bronze/load_bronze.sql), [runner](../scripts/bronze/load_bronze.py) | [Checks](../scripts/bronze/quality_checks.sql), [guide](../scripts/bronze/README.md) |
+| CRM customers/products | [Profile](../scripts/silver/profile_crm.sql) | [DDL](../scripts/silver/ddl_crm.sql), [load](../scripts/silver/load_crm.sql), [runner](../scripts/silver/run_crm.py) | [Checks](../scripts/silver/quality_checks.sql), [guide](../scripts/silver/README.md) |
+| CRM sales | [Profile](../scripts/silver/profile_sales.sql) | [DDL](../scripts/silver/ddl_sales.sql), [load](../scripts/silver/load_sales.sql), [runner](../scripts/silver/run_sales.py) | [Checks](../scripts/silver/quality_sales.sql), [audit SQL](../scripts/silver/audit_sales.sql), [rules](../scripts/silver/SALES.md), [audit](../scripts/silver/SALES_AUDIT.md) |
+| ERP | [Profile](../scripts/silver/profile_erp.sql) | [DDL](../scripts/silver/ddl_erp.sql), [load](../scripts/silver/load_erp.sql), [runner](../scripts/silver/run_erp.py) | [Checks](../scripts/silver/quality_erp.sql), [guide](../scripts/silver/ERP.md) |
+
+For connection, initialization, lifecycle, and execution order, see [LOCAL_SETUP.md](LOCAL_SETUP.md). The Python runner deliberately pins a known image ID, volume name, container name, and mount path. A different Docker image/build or Compose project name requires inspection and an intentional configuration update; bypassing assertions is not a setup method. Run normal Python, not `python -O`, because some checks use assertions. SQL edition checks alone do not prove locality; use the verified Docker runner or documented container command.
 
 **Maintenance rule:** update this guide when an implementation or business assumption changes. Numerical claims should always be rechecked against the runnable quality scripts; descriptive examples should not replace executable source code.

@@ -14,6 +14,12 @@ services:
     mem_limit: 4g
     volumes:
       - retailflow_sql_fresh:/var/opt/mssql
+      - type: bind
+        source: ./datasets
+        target: /var/opt/retailflow-datasets
+        read_only: true
+        bind:
+          create_host_path: false
 
 volumes:
   retailflow_sql_fresh:

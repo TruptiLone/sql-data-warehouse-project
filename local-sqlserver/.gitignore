@@ -3,5 +3,8 @@
 .env.*
 !.env.example
 
+# Raw course datasets stay local
+/datasets/
+
 # Editor and OS metadata
 .DS_Store

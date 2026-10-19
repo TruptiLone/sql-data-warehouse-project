@@ -1,0 +1,4 @@
+# Raw course datasets stay local
+/source_crm/
+/source_erp/
+.DS_Store
