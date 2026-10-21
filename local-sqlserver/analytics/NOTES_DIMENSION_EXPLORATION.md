@@ -4,6 +4,16 @@
 
 These notes accompany the existing [dimension exploration SQL](02_dimension_exploration.sql). Snapshot findings below reflect the supplied validated project findings and existing project documentation; they were not re-queried while writing these notes. Future data changes can change counts and distinct values. Illustrative examples are labeled separately.
 
+## Contents
+
+- [1. What is Dimension Exploration?](#1-what-is-dimension-exploration)
+- [2. Explore Customer Countries](#2-explore-customer-countries)
+- [3. Explore Product Categories](#3-explore-product-categories)
+- [4. Understand Product Hierarchy](#4-understand-product-hierarchy)
+- [5. Count Products by Category](#5-count-products-by-category)
+- [6. Knowledge Check](#6-knowledge-check)
+- [7. Key Takeaways](#7-key-takeaways)
+
 ## 1. What is Dimension Exploration?
 
 Dimensions describe business entities and provide attributes used to organize or group business data. In RetailFlow 360, customer country describes customers; category, subcategory, and product name describe products. A dimension view can contain many descriptive attributes, not just one column.

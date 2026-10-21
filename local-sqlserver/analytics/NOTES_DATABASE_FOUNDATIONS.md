@@ -2,6 +2,21 @@
 
 These notes explain the database concepts behind RetailFlow 360 and connect them to our local CRM/ERP warehouse. Environment and deployment statements describe the recorded project state, not a new database inspection. No database commands were executed to write these notes.
 
+## Contents
+
+- [1. What is a Database Server?](#1-what-is-a-database-server)
+- [2. What is a Database?](#2-what-is-a-database)
+- [3. What is a Data Warehouse?](#3-what-is-a-data-warehouse)
+- [4. What is a Database Schema?](#4-what-is-a-database-schema)
+- [5. What is a Table?](#5-what-is-a-table)
+- [6. What are Columns and Rows?](#6-what-are-columns-and-rows)
+- [7. What is a View?](#7-what-is-a-view)
+- [8. What is the Relationship Between Tables?](#8-what-is-the-relationship-between-tables)
+- [9. How Everything Works Together](#9-how-everything-works-together)
+- [10. How Data Flows Through RetailFlow 360](#10-how-data-flows-through-retailflow-360)
+- [11. Database Exploration Using Metadata](#11-database-exploration-using-metadata)
+- [12. Key Concepts to Remember](#12-key-concepts-to-remember)
+
 ## 1. What is a Database Server?
 
 A database server runs database management software to store, retrieve, secure, and manage data. The database management system (DBMS) handles queries, access permissions, transactions, and concurrent requests. Microsoft SQL Server, PostgreSQL, MySQL, and Oracle are examples of DBMS products. The server software can run on a physical computer, a virtual machine, or in a container.

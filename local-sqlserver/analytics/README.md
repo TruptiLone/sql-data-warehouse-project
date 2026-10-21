@@ -17,6 +17,19 @@ The SQL examples use the `DataWarehouse` context and are read-only. `GO` require
 
 The known `CO_PE`/`CO_PD` mismatch remains visible as missing category enrichment. The notes explain it without changing source mappings, Gold definitions, or ETL behavior.
 
+## Learning roadmap
+
+“Completed” below means the educational files are written and available; it does not imply a new live execution of every SQL example.
+
+| Stage | Status | Learning outcome |
+|---|---|---|
+| Database fundamentals | Completed documentation | Explain the server, database, warehouse layers, tables, views, and relationships |
+| 01 — Database Exploration | Completed SQL lesson | Inspect database objects and column metadata |
+| 02 — Dimension Exploration | Completed SQL lesson and notes | Identify distinct values, understand hierarchy, and interpret missing mappings |
+| Date Exploration | Upcoming | Investigate date ranges with `MIN`, `MAX`, and date functions |
+| Further EDA | Upcoming | Explore measures and grouped results with explicit data grain |
+| Advanced analytics | Upcoming | Develop deeper business questions and appropriate analytical queries |
+
 ## Upcoming work
 
 Date Exploration with `MIN`, `MAX`, and date functions is the next planned lesson. Further exploratory data analysis (EDA) and advanced analytics lessons may extend into sales measures, aggregations, and business questions. These are planned topics, not completed deliverables; links will be added when the actual files exist.
