@@ -79,7 +79,7 @@ The known `CO_PE`/`CO_PD` mismatch remains visible as missing category enrichmen
 | 05 — Magnitude Analysis | Completed SQL lesson, notes, and static captured-results board; two captures remain partial | Combine dimensions and measures for country/category comparisons |
 | 06 — Ranking Analysis | Completed SQL lesson, notes, and static ranking board | Identify top/bottom performers and define ranking/tie policies |
 | Further EDA | Upcoming | Explore measures and grouped results with explicit data grain |
-| Advanced analytics | Change-over-Time completed; later lessons upcoming | Compare time-based results, reconcile snapshots, and develop deeper business questions |
+| Advanced analytics | Change-over-Time and Cumulative Analysis completed; later lessons upcoming | Compare time-based results, reconcile snapshots, and develop deeper business questions |
 
 ## SQL Exploratory Data Analysis — Foundational Milestone
 
@@ -111,10 +111,10 @@ These are **planned features**, not implemented functionality. The existing imag
 
 ### Future Advanced SQL Analytics
 
-Change-over-time has its first completed milestone; the remaining analytical topics are planned:
+Change-over-time and cumulative analysis have completed milestones; the remaining analytical topics are planned:
 
 - Change-over-time analysis — [completed first milestone](advanced/README.md).
-- Cumulative analysis.
+- Cumulative analysis — [completed Lesson 02](advanced/NOTES_CUMULATIVE_ANALYSIS.md).
 - Performance comparisons.
 - Part-to-whole analysis.
 - Data segmentation.
@@ -124,4 +124,6 @@ Change-over-time has its first completed milestone; the remaining analytical top
 
 We are extending foundational EDA into deeper business analytics. [The advanced roadmap](advanced/README.md) now includes the completed [Change-over-Time lesson and notes](advanced/NOTES_CHANGE_OVER_TIME.md), preserved SQL, exact monthly snapshot, and static sales trend charts with a reproducible generator.
 
-2013 recorded the highest annual sales at **16,344,878.00**, approximately **179.8%** above 2012. The 2010 and 2014 observations cover partial years; currency is unconfirmed. Cumulative, performance, part-to-whole, segmentation, and business reporting analyses remain upcoming.
+2013 recorded the highest annual sales at **16,344,878.00**, approximately **179.8%** above 2012. The 2010 and 2014 observations cover partial years; currency is unconfirmed. Performance, part-to-whole, segmentation, and business reporting analyses remain upcoming.
+
+[Lesson 02 — Cumulative Analysis](advanced/NOTES_CUMULATIVE_ANALYSIS.md) adds validated running totals, yearly resets, moving averages, and reproducible charts. Final dated cumulative sales reconcile to **29,351,258.00**.

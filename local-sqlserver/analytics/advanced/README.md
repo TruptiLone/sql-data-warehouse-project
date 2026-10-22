@@ -7,7 +7,7 @@ This phase extends foundational SQL exploration into time-based business analysi
 | Lesson | Status | Purpose |
 |---|---|---|
 | 01 — Change-over-Time Analysis | Completed SQL, notes, captured results, and static visualizations | Compare daily, yearly, pooled month, and chronological monthly measures |
-| 02 — Cumulative Analysis | Upcoming | Running totals and cumulative measures |
+| 02 — Cumulative Analysis | Completed SQL, notes, validated snapshot, and charts | Running totals and cumulative measures |
 | 03 — Performance Analysis | Upcoming | Compare periods and reference performance |
 | 04 — Part-to-Whole Analysis | Upcoming | Measure contributions to totals |
 | 05 — Data Segmentation | Upcoming | Define meaningful business groups |
@@ -43,8 +43,26 @@ Static source snapshots, executable SQL lessons, and generated PNG charts are di
 
 ## Upcoming Advanced SQL Analyses
 
-Cumulative, performance, part-to-whole, segmentation, and business reporting lessons remain planned; no placeholder lesson SQL files are created. Investigate the January 2013/2014 sales-versus-volume contrast and verify missing-date amounts before drawing causal conclusions.
+Performance, part-to-whole, segmentation, and business reporting lessons remain planned; no placeholder lesson SQL files are created. Investigate the January 2013/2014 sales-versus-volume contrast and verify missing-date amounts before drawing causal conclusions.
 
 [Return to the analytics roadmap](../README.md)
 
 Validation environment: the generator was successfully run with the existing Anaconda Python and Matplotlib; no dependencies were installed. The original SQL was statically reviewed and was not executed during publication.
+
+
+## Lesson 02: Cumulative Analysis
+
+Running totals, annual resets, rolling sales averages, and expanding monthly-price averages build on Lesson 01. All 38 monthly records reconcile: final dated cumulative sales are **29,351,258.00**. The three-month sales average is approximately **1,776,025.67** in December 2013 and **1,233,486.00** in January 2014. Boundary years are partial; source currency is unconfirmed.
+
+- [Preserved cumulative SQL](02_cumulative_analysis.sql)
+- [Cumulative Analysis notes](NOTES_CUMULATIVE_ANALYSIS.md)
+- [Validated combined snapshot](data/cumulative_analysis_snapshot.csv)
+- [Reproducible chart generator](visualizations/generate_cumulative_charts.py)
+
+![Cumulative sales](images/cumulative_sales_trend.png)
+
+![Monthly sales and moving average](images/monthly_sales_moving_average.png)
+
+These static charts are generated from exported SQL results. The earliest rolling averages use fewer than three observations; January 2014 alone does not establish a sustained decline. The notes also include the monthly-price chart and explain why an equally weighted average of monthly prices differs from a transaction-weighted average.
+
+Run `python3 visualizations/generate_cumulative_charts.py --output-dir /tmp/retailflow-cumulative-preview` with an existing Matplotlib installation and a fresh output directory. No database connection or automatic refresh is involved.
