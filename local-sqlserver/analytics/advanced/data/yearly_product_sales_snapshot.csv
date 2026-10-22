@@ -1,0 +1,220 @@
+order_year,product_key,product_name,current_sales
+2011,3,Mountain-100 Black- 38,165375.00
+2011,4,Mountain-100 Black- 42,151875.00
+2011,5,Mountain-100 Black- 44,202500.00
+2011,6,Mountain-100 Black- 48,189000.00
+2011,7,Mountain-100 Silver- 38,193800.00
+2011,8,Mountain-100 Silver- 42,142800.00
+2011,9,Mountain-100 Silver- 44,156400.00
+2011,10,Mountain-100 Silver- 48,122400.00
+2011,16,Road-150 Red- 44,1001840.00
+2011,17,Road-150 Red- 48,1198630.00
+2011,18,Road-150 Red- 52,1076978.00
+2011,19,Road-150 Red- 56,1051932.00
+2011,20,Road-150 Red- 62,1195052.00
+2011,36,Road-650 Black- 44,14679.00
+2012,36,Road-650 Black- 44,32886.00
+2011,37,Road-650 Black- 48,11883.00
+2012,37,Road-650 Black- 48,33669.00
+2011,38,Road-650 Black- 52,23067.00
+2012,38,Road-650 Black- 52,43848.00
+2011,39,Road-650 Black- 58,12582.00
+2012,39,Road-650 Black- 58,45414.00
+2011,40,Road-650 Black- 60,19572.00
+2012,40,Road-650 Black- 60,37584.00
+2011,41,Road-650 Black- 62,14679.00
+2012,41,Road-650 Black- 62,33669.00
+2011,42,Road-650 Red- 44,15378.00
+2012,42,Road-650 Red- 44,39150.00
+2011,43,Road-650 Red- 48,18957.00
+2012,43,Road-650 Red- 48,47763.00
+2011,44,Road-650 Red- 52,14064.00
+2012,44,Road-650 Red- 52,31320.00
+2011,45,Road-650 Red- 58,13281.00
+2012,45,Road-650 Red- 58,43065.00
+2011,46,Road-650 Red- 60,11883.00
+2012,46,Road-650 Red- 60,28188.00
+2011,47,Road-650 Red- 62,11967.00
+2012,47,Road-650 Red- 62,45414.00
+2011,48,Road-250 Red- 44,4886.00
+2012,48,Road-250 Red- 44,346906.00
+2011,49,Road-250 Red- 48,7329.00
+2012,49,Road-250 Red- 48,388437.00
+2011,50,Road-250 Red- 52,2443.00
+2012,50,Road-250 Red- 52,322476.00
+2012,104,Mountain Bottle Cage,110.00
+2013,104,Mountain Bottle Cage,19530.00
+2012,105,Road Bottle Cage,81.00
+2013,105,Road Bottle Cage,15237.00
+2012,106,Mountain-500 Black- 40,540.00
+2013,106,Mountain-500 Black- 40,25380.00
+2013,107,Mountain-500 Black- 42,26460.00
+2013,108,Mountain-500 Black- 44,31320.00
+2013,109,Mountain-500 Black- 48,30240.00
+2013,110,Mountain-500 Black- 52,22140.00
+2013,111,Mountain-500 Silver- 40,25425.00
+2013,112,Mountain-500 Silver- 42,25425.00
+2012,113,Mountain-500 Silver- 44,565.00
+2013,113,Mountain-500 Silver- 44,21470.00
+2013,114,Mountain-500 Silver- 48,28250.00
+2013,115,Mountain-500 Silver- 52,27120.00
+2013,116,Mountain-400-W Silver- 38,113812.00
+2012,117,Mountain-400-W Silver- 40,769.00
+2013,117,Mountain-400-W Silver- 40,97663.00
+2013,118,Mountain-400-W Silver- 42,99201.00
+2013,119,Mountain-400-W Silver- 46,106122.00
+2011,120,Mountain-200 Black- 38,4098.00
+2012,120,Mountain-200 Black- 38,342921.00
+2013,120,Mountain-200 Black- 38,945540.00
+2012,121,Mountain-200 Black- 42,392343.00
+2013,121,Mountain-200 Black- 42,970785.00
+2011,122,Mountain-200 Black- 46,2049.00
+2012,122,Mountain-200 Black- 46,423570.00
+2013,122,Mountain-200 Black- 46,947835.00
+2012,123,Mountain-200 Silver- 38,371954.00
+2013,123,Mountain-200 Silver- 38,967440.00
+2011,124,Mountain-200 Silver- 42,2071.00
+2012,124,Mountain-200 Silver- 42,352817.00
+2013,124,Mountain-200 Silver- 42,902480.00
+2012,125,Mountain-200 Silver- 46,377669.00
+2013,125,Mountain-200 Silver- 46,921040.00
+2012,126,Road-750 Black- 44,1620.00
+2013,126,Road-750 Black- 44,192780.00
+2012,127,Road-750 Black- 48,1080.00
+2013,127,Road-750 Black- 48,194940.00
+2012,128,Road-750 Black- 52,2160.00
+2013,128,Road-750 Black- 52,206280.00
+2012,129,Road-750 Black- 58,1080.00
+2013,129,Road-750 Black- 58,179280.00
+2011,130,Road-550-W Yellow- 38,1000.00
+2012,130,Road-550-W Yellow- 38,71000.00
+2013,130,Road-550-W Yellow- 38,221760.00
+2012,131,Road-550-W Yellow- 40,68120.00
+2013,131,Road-550-W Yellow- 40,221760.00
+2011,132,Road-550-W Yellow- 42,1000.00
+2012,132,Road-550-W Yellow- 42,68000.00
+2013,132,Road-550-W Yellow- 42,265440.00
+2012,133,Road-550-W Yellow- 44,78120.00
+2013,133,Road-550-W Yellow- 44,234080.00
+2012,134,Road-550-W Yellow- 48,74240.00
+2013,134,Road-550-W Yellow- 48,209440.00
+2012,135,Road-350-W Yellow- 40,1701.00
+2013,135,Road-350-W Yellow- 40,416745.00
+2012,136,Road-350-W Yellow- 42,5103.00
+2013,136,Road-350-W Yellow- 42,394632.00
+2013,137,Road-350-W Yellow- 44,367416.00
+2012,138,Road-350-W Yellow- 48,1701.00
+2013,138,Road-350-W Yellow- 48,392931.00
+2011,139,Road-250 Black- 44,6546.00
+2012,139,Road-250 Black- 44,279818.00
+2013,139,Road-250 Black- 44,342020.00
+2012,140,Road-250 Black- 48,310105.00
+2013,140,Road-250 Black- 48,381108.00
+2011,141,Road-250 Black- 52,4364.00
+2012,141,Road-250 Black- 52,378269.00
+2013,141,Road-250 Black- 52,351792.00
+2011,142,Road-250 Black- 58,2182.00
+2012,142,Road-250 Black- 58,316912.00
+2013,142,Road-250 Black- 58,302932.00
+2011,143,Road-250 Red- 58,6546.00
+2012,143,Road-250 Red- 58,376087.00
+2013,143,Road-250 Red- 58,320033.00
+2013,144,Touring-3000 Blue- 44,39326.00
+2013,145,Touring-3000 Blue- 50,35616.00
+2012,146,Touring-3000 Blue- 54,742.00
+2013,146,Touring-3000 Blue- 54,40068.00
+2013,147,Touring-3000 Blue- 58,42294.00
+2013,148,Touring-3000 Blue- 62,47488.00
+2013,149,Touring-3000 Yellow- 44,43778.00
+2013,150,Touring-3000 Yellow- 50,43778.00
+2013,151,Touring-3000 Yellow- 54,35616.00
+2012,152,Touring-3000 Yellow- 58,1484.00
+2013,152,Touring-3000 Yellow- 58,33390.00
+2013,153,Touring-3000 Yellow- 62,37100.00
+2012,154,Touring-2000 Blue- 46,2430.00
+2013,154,Touring-2000 Blue- 46,115425.00
+2012,155,Touring-2000 Blue- 50,1215.00
+2013,155,Touring-2000 Blue- 50,127575.00
+2013,156,Touring-2000 Blue- 54,106920.00
+2012,157,Touring-2000 Blue- 60,1215.00
+2013,157,Touring-2000 Blue- 60,97200.00
+2012,158,Touring-1000 Blue- 46,4768.00
+2013,158,Touring-1000 Blue- 46,417200.00
+2012,159,Touring-1000 Blue- 50,2384.00
+2013,159,Touring-1000 Blue- 50,355216.00
+2013,160,Touring-1000 Blue- 54,381440.00
+2012,161,Touring-1000 Blue- 60,2384.00
+2013,161,Touring-1000 Blue- 60,348064.00
+2013,162,Touring-1000 Yellow- 46,410048.00
+2012,163,Touring-1000 Yellow- 50,4768.00
+2013,163,Touring-1000 Yellow- 50,355216.00
+2013,164,Touring-1000 Yellow- 54,376672.00
+2013,165,Touring-1000 Yellow- 60,333760.00
+2012,166,AWC Logo Cap,72.00
+2013,166,AWC Logo Cap,18891.00
+2013,168,Bike Wash - Dissolver,6960.00
+2012,174,Fender Set - Mountain,110.00
+2013,174,Fender Set - Mountain,44484.00
+2012,233,Half-Finger Gloves- L,24.00
+2013,233,Half-Finger Gloves- L,10248.00
+2012,234,Half-Finger Gloves- M,24.00
+2013,234,Half-Finger Gloves- M,11376.00
+2012,235,Half-Finger Gloves- S,24.00
+2013,235,Half-Finger Gloves- S,11064.00
+2012,244,Sport-100 Helmet- Black,210.00
+2013,244,Sport-100 Helmet- Black,69895.00
+2012,245,Sport-100 Helmet- Blue,350.00
+2013,245,Sport-100 Helmet- Blue,71050.00
+2012,246,Sport-100 Helmet- Red,350.00
+2013,246,Sport-100 Helmet- Red,75145.00
+2012,247,Hydration Pack - 70 oz.,110.00
+2013,247,Hydration Pack - 70 oz.,38940.00
+2012,248,Long-Sleeve Logo Jersey- L,150.00
+2013,248,Long-Sleeve Logo Jersey- L,21550.00
+2012,249,Long-Sleeve Logo Jersey- M,50.00
+2013,249,Long-Sleeve Logo Jersey- M,20850.00
+2013,250,Long-Sleeve Logo Jersey- S,20350.00
+2013,251,Long-Sleeve Logo Jersey- XL,19850.00
+2012,259,Patch Kit/8 Patches,8.00
+2013,259,Patch Kit/8 Patches,6048.00
+2013,260,Hitch Rack - 4-Bike,36840.00
+2013,272,Women's Mountain Shorts- L,23800.00
+2013,273,Women's Mountain Shorts- M,23380.00
+2013,274,Women's Mountain Shorts- S,20230.00
+2012,275,Short-Sleeve Classic Jersey- L,108.00
+2013,275,Short-Sleeve Classic Jersey- L,19764.00
+2012,276,Short-Sleeve Classic Jersey- M,54.00
+2013,276,Short-Sleeve Classic Jersey- M,20790.00
+2012,277,Short-Sleeve Classic Jersey- S,54.00
+2013,277,Short-Sleeve Classic Jersey- S,21384.00
+2013,278,Short-Sleeve Classic Jersey- XL,21168.00
+2012,279,Racing Socks- L,18.00
+2013,279,Racing Socks- L,2340.00
+2013,280,Racing Socks- M,2529.00
+2012,281,All-Purpose Bike Stand,159.00
+2013,281,All-Purpose Bike Stand,37683.00
+2013,282,LL Mountain Tire,20125.00
+2012,283,ML Mountain Tire,30.00
+2013,283,ML Mountain Tire,32580.00
+2012,284,HL Mountain Tire,140.00
+2013,284,HL Mountain Tire,46935.00
+2012,285,LL Road Tire,105.00
+2013,285,LL Road Tire,20622.00
+2012,286,ML Road Tire,50.00
+2013,286,ML Road Tire,22275.00
+2012,287,HL Road Tire,132.00
+2013,287,HL Road Tire,26532.00
+2012,288,Touring Tire,58.00
+2013,288,Touring Tire,25607.00
+2012,289,Mountain Tire Tube,15.00
+2013,289,Mountain Tire Tube,14620.00
+2012,290,Road Tire Tube,28.00
+2013,290,Road Tire Tube,8888.00
+2012,291,Touring Tire Tube,10.00
+2013,291,Touring Tire Tube,7010.00
+2013,292,Classic Vest- L,11968.00
+2013,293,Classic Vest- M,11840.00
+2012,294,Classic Vest- S,64.00
+2013,294,Classic Vest- S,10368.00
+2012,295,Water Bottle - 30 oz.,90.00
+2013,295,Water Bottle - 30 oz.,20425.00

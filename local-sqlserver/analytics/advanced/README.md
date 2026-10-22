@@ -8,7 +8,7 @@ This phase extends foundational SQL exploration into time-based business analysi
 |---|---|---|
 | 01 — Change-over-Time Analysis | Completed SQL, notes, captured results, and static visualizations | Compare daily, yearly, pooled month, and chronological monthly measures |
 | 02 — Cumulative Analysis | Completed SQL, notes, validated snapshot, and charts | Running totals and cumulative measures |
-| 03 — Performance Analysis | Upcoming | Compare periods and reference performance |
+| 03 — Performance Analysis | Completed SQL, notes, derived results, and charts | Compare periods and reference performance |
 | 04 — Part-to-Whole Analysis | Upcoming | Measure contributions to totals |
 | 05 — Data Segmentation | Upcoming | Define meaningful business groups |
 | 06 — Advanced Business Reports | Upcoming | Combine analyses for stakeholder questions |
@@ -43,7 +43,7 @@ Static source snapshots, executable SQL lessons, and generated PNG charts are di
 
 ## Upcoming Advanced SQL Analyses
 
-Performance, part-to-whole, segmentation, and business reporting lessons remain planned; no placeholder lesson SQL files are created. Investigate the January 2013/2014 sales-versus-volume contrast and verify missing-date amounts before drawing causal conclusions.
+Part-to-whole, segmentation, and business reporting lessons remain planned; no placeholder lesson SQL files are created. Investigate the January 2013/2014 sales-versus-volume contrast and verify missing-date amounts before drawing causal conclusions.
 
 [Return to the analytics roadmap](../README.md)
 
@@ -66,3 +66,24 @@ Running totals, annual resets, rolling sales averages, and expanding monthly-pri
 These static charts are generated from exported SQL results. The earliest rolling averages use fewer than three observations; January 2014 alone does not establish a sustained decline. The notes also include the monthly-price chart and explain why an equally weighted average of monthly prices differs from a transaction-weighted average.
 
 Run `python3 visualizations/generate_cumulative_charts.py --output-dir /tmp/retailflow-cumulative-preview` with an existing Matplotlib installation and a fresh output directory. No database connection or automatic refresh is involved.
+
+
+## Lesson 03: Performance Analysis
+
+The validated Query 1 export contains **219 product-year records**, **130 distinct products**, and **29,262,197.00** in 2011–2013 sales. Python calculations identify **65 comparable 2012–2013 products: 62 increases and 3 decreases**. Product 120 has observed-year average sales of **430,853.00**. Appended SQL comparison queries are read-only and have not been executed; derived metrics are explicitly identified as Python calculations.
+
+- [Performance SQL](03_performance_analysis.sql)
+- [Detailed learning notes and limitations](NOTES_PERFORMANCE_ANALYSIS.md)
+- [Source product-year CSV](data/yearly_product_sales_snapshot.csv)
+- [Derived performance CSV](data/product_performance_snapshot.csv)
+- [Data processing script](visualizations/generate_performance_data.py)
+- [Chart generator](visualizations/generate_performance_charts.py)
+- [Product coverage chart](images/products_with_sales_by_year.png)
+- [YoY comparison chart](images/product_yoy_performance.png)
+- [Average-versus-actual chart](images/product_average_vs_actual_sales.png)
+
+![Selected product YoY sales](images/product_yoy_performance.png)
+
+![Product average versus actual sales](images/product_average_vs_actual_sales.png)
+
+Benchmarks use observed sales years only; absent years are not filled with zero. True YoY comparisons require consecutive years. Product keys may change across warehouse refreshes, and currency is unconfirmed. Reproduction commands and exact provenance are in the notes. Lessons 01 and 02 remain published; Lessons 04–06 remain upcoming.
