@@ -79,7 +79,7 @@ The known `CO_PE`/`CO_PD` mismatch remains visible as missing category enrichmen
 | 05 — Magnitude Analysis | Completed SQL lesson, notes, and static captured-results board; two captures remain partial | Combine dimensions and measures for country/category comparisons |
 | 06 — Ranking Analysis | Completed SQL lesson, notes, and static ranking board | Identify top/bottom performers and define ranking/tie policies |
 | Further EDA | Upcoming | Explore measures and grouped results with explicit data grain |
-| Advanced analytics | Upcoming | Develop deeper business questions and appropriate analytical queries |
+| Advanced analytics | Change-over-Time completed; later lessons upcoming | Compare time-based results, reconcile snapshots, and develop deeper business questions |
 
 ## SQL Exploratory Data Analysis — Foundational Milestone
 
@@ -89,7 +89,7 @@ Lessons **01, 02, 04, 05, and 06** have completed SQL and accompanying published
 
 ## Upcoming work
 
-Review and publish the separate Lesson 03 work, capture the missing Bikes average cost and the full quantity-by-country result from Lesson 05, and define date/snapshot and currency semantics before building a complete dashboard comparison. Validate join uniqueness and missing-reference behavior against the intended reporting snapshot. Further EDA and advanced analytics remain upcoming; existing lesson files are preserved. Links to future lessons will be added when they are ready and published.
+Review and publish the separate Lesson 03 work, capture the missing Bikes average cost and the full quantity-by-country result from Lesson 05, and define date/snapshot and currency semantics before building a complete dashboard comparison. Validate join uniqueness and missing-reference behavior against the intended reporting snapshot. Further EDA and later advanced analytics lessons remain upcoming; existing lesson files are preserved. Links to future lessons will be added when they are ready and published.
 
 See the [local warehouse overview](../README.md) for the broader CRM/ERP warehouse context.
 
@@ -111,10 +111,17 @@ These are **planned features**, not implemented functionality. The existing imag
 
 ### Future Advanced SQL Analytics
 
-The next analytical topics are planned, not completed lessons:
+Change-over-time has its first completed milestone; the remaining analytical topics are planned:
 
-- Change-over-time analysis.
+- Change-over-time analysis — [completed first milestone](advanced/README.md).
 - Cumulative analysis.
 - Performance comparisons.
 - Part-to-whole analysis.
 - Data segmentation.
+
+
+## Advanced SQL Analytics
+
+We are extending foundational EDA into deeper business analytics. [The advanced roadmap](advanced/README.md) now includes the completed [Change-over-Time lesson and notes](advanced/NOTES_CHANGE_OVER_TIME.md), preserved SQL, exact monthly snapshot, and static sales trend charts with a reproducible generator.
+
+2013 recorded the highest annual sales at **16,344,878.00**, approximately **179.8%** above 2012. The 2010 and 2014 observations cover partial years; currency is unconfirmed. Cumulative, performance, part-to-whole, segmentation, and business reporting analyses remain upcoming.
