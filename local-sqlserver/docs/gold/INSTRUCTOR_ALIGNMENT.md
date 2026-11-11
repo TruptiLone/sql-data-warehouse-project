@@ -7,7 +7,7 @@
 > Silver still runs `silver.refresh_all`; the local `silver.load_silver` revision
 > remains undeployed and has only offline checks. No ETL was run for this audit.
 
-Reference inspected: `/Users/truptaditya/Downloads/sql-data-warehouse-project/scripts/gold/ddl_gold.sql`.
+Reference inspected: the course reference `scripts/gold/ddl_gold.sql`.
 The file was treated as reference SQL, not instructions to execute its DROP statements.
 No changes were made to the reference, Bronze or Silver. No Gold DDL was executed.
 Read-only metadata inspection returned no existing dim_customers, dim_products or
