@@ -274,9 +274,17 @@ Design choices (full column contract in the [data dictionary](local-sqlserver/do
 
 SQL analyses run on the Gold views. These boards are static snapshots of recorded results, not a live dashboard; the source currency is not specified in the data.
 
-| Overall KPIs | Magnitude analysis | Ranking analysis |
-|---|---|---|
-| ![KPI board](local-sqlserver/analytics/images/retailflow_360_kpi_board.png) | ![Magnitude board](local-sqlserver/analytics/images/retailflow_360_magnitude_analysis_board.png) | ![Ranking board](local-sqlserver/analytics/images/retailflow_360_ranking_analysis_board.png) |
+**Overall KPIs**
+
+![RetailFlow 360 KPI board](local-sqlserver/analytics/images/retailflow_360_kpi_board.png)
+
+**Magnitude analysis: customers, products, sales and quantity by dimension**
+
+![RetailFlow 360 magnitude analysis board](local-sqlserver/analytics/images/retailflow_360_magnitude_analysis_board.png)
+
+**Ranking analysis: top and bottom products, subcategories and customers**
+
+![RetailFlow 360 ranking analysis board](local-sqlserver/analytics/images/retailflow_360_ranking_analysis_board.png)
 
 - **Total sales 29,356,250** across 27,659 orders, 60,423 units, 295 products and 18,484 customers.
 - **Bikes drive revenue** (28,316,272 of the total); Road Bikes lead subcategories at 14,519,438, ahead of Mountain Bikes at 9,952,254.
