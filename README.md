@@ -293,9 +293,13 @@ SQL analyses run on the Gold views. These boards are static snapshots of recorde
 
 Time-series work also includes running totals, moving averages and year-over-year product performance:
 
-| Monthly sales | Cumulative sales |
-|---|---|
-| ![Monthly sales trend](local-sqlserver/analytics/advanced/images/monthly_sales_trend.png) | ![Cumulative sales trend](local-sqlserver/analytics/advanced/images/cumulative_sales_trend.png) |
+**Monthly sales**
+
+![Monthly sales trend](local-sqlserver/analytics/advanced/images/monthly_sales_trend.png)
+
+**Cumulative sales**
+
+![Cumulative sales trend](local-sqlserver/analytics/advanced/images/cumulative_sales_trend.png)
 
 See the [analytics guide](local-sqlserver/analytics/README.md) and [advanced analytics](local-sqlserver/analytics/advanced/README.md) for the SQL, the notes explaining each technique, and the reproducible chart scripts.
 
